@@ -462,7 +462,7 @@
             letter-spacing: 2px;
         }
 
-        /* --- LOGS TABLE --- */
+        /* --- LOGS & BLOCK TABLE --- */
         .log-table-container {
             background: rgba(30, 41, 59, 0.4);
             border: 1px solid var(--panel-border);
@@ -587,6 +587,7 @@
             <div class="console-body">
                 <nav class="sidebar">
                     <button class="nav-item active" onclick="switchTab('call', this)">Direct Call</button>
+                    <button class="nav-item" onclick="switchTab('blocklist', this)">Blocklist</button>
                     <button class="nav-item" onclick="switchTab('history', this)">Session Logs</button>
                     <button class="nav-item" onclick="switchTab('settings', this)">Settings</button>
                 </nav>
@@ -626,6 +627,32 @@
                                     <button class="btn btn-success" onclick="callPeerByCode()" style="margin-top: 0.75rem;">Connect Call</button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOCKLIST PANE -->
+                    <div id="pane-blocklist" class="tab-pane hidden">
+                        <h2 class="pane-heading">Blocked Station Numbers</h2>
+                        
+                        <div class="card-box" style="margin-bottom: 1.25rem;">
+                            <label>Block New Number</label>
+                            <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                                <input type="text" id="block-input-code" class="form-control" placeholder="Enter 4-digit code" maxlength="4" style="font-weight: 600; letter-spacing: 1px;">
+                                <button class="btn btn-danger" style="width: auto; padding: 0.5rem 1rem;" onclick="blockPeerCode()">Block</button>
+                            </div>
+                        </div>
+
+                        <div class="log-table-container">
+                            <table class="log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Station Code</th>
+                                        <th>Operator Name</th>
+                                        <th style="text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="blocklist-table-body"></tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -704,6 +731,50 @@
             return globalAudioCtx;
         }
 
+        // Web Audio Ringtone Generator (Classic telephone ring cadence)
+        let ringtoneInterval = null;
+
+        function startRingtone() {
+            stopRingtone();
+            const ctx = getAudioContext();
+            
+            const playBeeps = () => {
+                if (!ringtoneInterval) return;
+                try {
+                    const now = ctx.currentTime;
+                    // Dual tones (440Hz & 480Hz)
+                    const osc1 = ctx.createOscillator();
+                    const osc2 = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc1.frequency.setValueAtTime(440, now);
+                    osc2.frequency.setValueAtTime(480, now);
+                    
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                    osc1.connect(gain);
+                    osc2.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + 0.4);
+                    osc2.stop(now + 0.4);
+                } catch(e) {}
+            };
+
+            playBeeps();
+            ringtoneInterval = setInterval(playBeeps, 2000); // Rings every 2 seconds
+        }
+
+        function stopRingtone() {
+            if (ringtoneInterval) {
+                clearInterval(ringtoneInterval);
+                ringtoneInterval = null;
+            }
+        }
+
         function togglePasswordVisibility(fieldId, btnElement) {
             const field = document.getElementById(fieldId);
             if (field.type === 'password') {
@@ -731,6 +802,7 @@
         }
 
         function closeModal() {
+            stopRingtone();
             document.getElementById('custom-modal-backdrop').classList.add('hidden');
         }
 
@@ -821,6 +893,7 @@
             }
 
             loadHistory();
+            loadBlocklist();
             startBackgroundPolling(permCode);
         }
 
@@ -845,6 +918,7 @@
             document.getElementById('pane-' + name).classList.remove('hidden');
             element.classList.add('active');
             if(name === 'history') loadHistory();
+            if(name === 'blocklist') loadBlocklist();
         }
 
         function applyThemeColor(hexColor) {
@@ -898,10 +972,76 @@
                 if (myCode) localStorage.removeItem('callp2p_code_map_' + myCode);
                 localStorage.removeItem('callp2p_history_' + currentUser);
                 localStorage.removeItem('callp2p_theme_' + currentUser);
+                localStorage.removeItem('callp2p_blocklist_' + currentUser);
             }
             closeModal();
             handleLogout();
             showModal('Account Deleted', 'Your profile and station code have been cleared.');
+        }
+
+        // --- BLOCKLIST LOGIC ---
+        function getBlocklist(user) {
+            try {
+                return JSON.parse(localStorage.getItem('callp2p_blocklist_' + user) || '[]');
+            } catch(e) {
+                return [];
+            }
+        }
+
+        function blockPeerCode() {
+            const codeInput = document.getElementById('block-input-code');
+            const code = codeInput.value.trim();
+            if (code.length !== 4) {
+                showModal('Invalid Input', 'Please enter a valid 4-digit code to block.');
+                return;
+            }
+            const user = localStorage.getItem('callp2p_current');
+            const myCode = localStorage.getItem('callp2p_user_code_' + user);
+            if (code === myCode) {
+                showModal('Invalid Operation', 'You cannot block your own code.');
+                return;
+            }
+
+            let list = getBlocklist(user);
+            if (!list.includes(code)) {
+                list.push(code);
+                localStorage.setItem('callp2p_blocklist_' + user, JSON.stringify(list));
+            }
+            codeInput.value = '';
+            loadBlocklist();
+            showModal('Blocklist', `Station code ${code} has been blocked.`);
+        }
+
+        function unblockPeerCode(code) {
+            const user = localStorage.getItem('callp2p_current');
+            let list = getBlocklist(user);
+            list = list.filter(c => c !== code);
+            localStorage.setItem('callp2p_blocklist_' + user, JSON.stringify(list));
+            loadBlocklist();
+        }
+
+        function loadBlocklist() {
+            const user = localStorage.getItem('callp2p_current');
+            const list = getBlocklist(user);
+            const tbody = document.getElementById('blocklist-table-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">No station numbers blocked.</td></tr>`;
+                return;
+            }
+
+            list.forEach(code => {
+                const opName = localStorage.getItem('callp2p_code_map_' + code) || 'Unknown Operator';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family: monospace; font-weight: 600; color: #60a5fa;">${code}</td>
+                    <td>${opName}</td>
+                    <td style="text-align: right;"><button class="btn btn-success" style="width: auto; padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="unblockPeerCode('${code}')">Unblock</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         let callTimerInterval = null;
@@ -982,7 +1122,9 @@
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate === null) {
                     const payload = JSON.stringify(peerConnection.localDescription);
-                    localStorage.setItem(`callp2p_signal_${myCode}_to_${targetCode}`, payload);
+                    // Use a unique generation tag so repeated calls always update the signal key fresh
+                    const ts = Date.now();
+                    localStorage.setItem(`callp2p_signal_${myCode}_to_${targetCode}`, JSON.stringify({ ts, desc: peerConnection.localDescription }));
                 }
             };
 
@@ -1003,6 +1145,13 @@
 
             if(targetCode === myCode) {
                 showModal('Invalid Operation', "You cannot call your own code.");
+                return;
+            }
+
+            // Check blocklist of target or local blocklist
+            const peerBlocklist = getBlocklist(localStorage.getItem('callp2p_code_map_' + targetCode));
+            if (peerBlocklist.includes(myCode)) {
+                showModal('Call Failed', 'Unable to connect to this station.');
                 return;
             }
 
@@ -1055,19 +1204,22 @@
                 const answerPayload = localStorage.getItem(`callp2p_signal_${targetCode}_to_${myCode}`);
                 if (answerPayload && !pc.currentRemoteDescription) {
                     clearInterval(poll);
-                    const answerDesc = new RTCSessionDescription(JSON.parse(answerPayload));
+                    const parsed = JSON.parse(answerPayload);
+                    const answerDesc = new RTCSessionDescription(parsed.desc || parsed);
                     await pc.setRemoteDescription(answerDesc);
                 }
             }, 500);
         }
 
-        let lastHandledSignalKey = null;
+        let lastHandledSignalTimestamp = 0;
 
         function startBackgroundPolling(myCode) {
             if (pollInterval) clearInterval(pollInterval);
 
-            // Accelerated polling interval (500ms) for immediate responsiveness
             pollInterval = setInterval(async () => {
+                const currentUser = localStorage.getItem('callp2p_current');
+                const blockedList = getBlocklist(currentUser);
+
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (key && key.startsWith('callp2p_hangup_') && key.endsWith(`_to_${myCode}`)) {
@@ -1085,29 +1237,51 @@
                     const key = localStorage.key(i);
                     if (key && key.startsWith('callp2p_signal_') && key.endsWith(`_to_${myCode}`)) {
                         const callerCode = key.split('_')[2];
-                        const offerPayload = localStorage.getItem(key);
 
-                        if (offerPayload && key !== lastHandledSignalKey && (!peerConnection || peerConnection.signalingState === "stable")) {
-                            lastHandledSignalKey = key;
-                            const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
-                            
-                            const actionsHTML = `
-                                <button class="btn btn-danger" onclick="rejectIncomingCall('${myCode}', '${callerCode}', '${key}')">Decline</button>
-                                <button class="btn btn-success" onclick="acceptIncomingCall('${myCode}', '${callerCode}', '${key}')">Accept</button>
-                            `;
-                            showModal('Incoming Call', `Incoming call from operator: ${callerName} (Code: ${callerCode})`, actionsHTML);
-                            break;
+                        // Skip if caller is blocked
+                        if (blockedList.includes(callerCode)) continue;
+
+                        const rawPayload = localStorage.getItem(key);
+                        if (rawPayload) {
+                            let payloadObj;
+                            try {
+                                payloadObj = JSON.parse(rawPayload);
+                            } catch(e) {
+                                continue;
+                            }
+
+                            const packetTimestamp = payloadObj.ts || 0;
+
+                            if (packetTimestamp > lastHandledSignalTimestamp && (!peerConnection || peerConnection.signalingState === "stable")) {
+                                lastHandledSignalTimestamp = packetTimestamp;
+                                const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
+                                
+                                // Trigger notification and synthesized ringtone
+                                startRingtone();
+                                
+                                const actionsHTML = `
+                                    <button class="btn btn-danger" onclick="rejectIncomingCall('${myCode}', '${callerCode}', '${key}')">Decline</button>
+                                    <button class="btn btn-success" onclick="acceptIncomingCall('${myCode}', '${callerCode}', '${key}', ${packetTimestamp})">Accept</button>
+                                `;
+                                showModal('Incoming Call', `Incoming call from operator: ${callerName} (Code: ${callerCode})`, actionsHTML);
+                                break;
+                            }
                         }
                     }
                 }
             }, 500);
         }
 
-        async function acceptIncomingCall(myCode, callerCode, signalKey) {
+        async function acceptIncomingCall(myCode, callerCode, signalKey, packetTimestamp) {
             getAudioContext();
-            const offerPayload = localStorage.getItem(signalKey);
+            stopRingtone();
+            const rawPayload = localStorage.getItem(signalKey);
             localStorage.removeItem(signalKey);
             closeModal();
+
+            if (!rawPayload) return;
+            const parsed = JSON.parse(rawPayload);
+            const offerDesc = parsed.desc || parsed;
 
             const stream = await startAudioMedia();
             if (!stream) return;
@@ -1117,7 +1291,7 @@
 
             document.getElementById('call-state-label').textContent = `Connected with Code ${callerCode}`;
             const pc = initPeerConnection(myCode, callerCode);
-            await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerPayload)));
+            await pc.setRemoteDescription(new RTCSessionDescription(offerDesc));
             
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
@@ -1126,6 +1300,7 @@
         }
 
         function rejectIncomingCall(myCode, callerCode, signalKey) {
+            stopRingtone();
             localStorage.removeItem(signalKey);
             localStorage.setItem(`callp2p_hangup_${myCode}_to_${callerCode}`, Date.now().toString());
             logHistory("Disconnected", `Declined incoming call from code ${callerCode}`);
@@ -1133,6 +1308,7 @@
         }
 
         function hangUpCall(broadcast = true) {
+            stopRingtone();
             if (callTimeoutHandle) {
                 clearTimeout(callTimeoutHandle);
                 callTimeoutHandle = null;
