@@ -932,6 +932,7 @@
         let localStream = null;
         let peerConnection = null;
         let pollInterval = null;
+        let callTimeoutHandle = null;
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
         async function startAudioMedia() {
@@ -967,6 +968,11 @@
                     const source = audioCtx.createMediaStreamSource(event.streams[0]);
                     source.connect(audioCtx.destination);
                 } catch (e) {}
+
+                if (callTimeoutHandle) {
+                    clearTimeout(callTimeoutHandle);
+                    callTimeoutHandle = null;
+                }
 
                 document.getElementById('call-state-label').textContent = "Secure Voice Channel Active";
                 startCallTimer();
@@ -1019,14 +1025,30 @@
             document.getElementById('call-state-label').textContent = `Calling ${peerUsername}...`;
             logHistory("Outgoing", `Voice call initiated to station code ${targetCode}`);
 
+            // 10-Second Unanswered Timeout implementation
+            if (callTimeoutHandle) clearTimeout(callTimeoutHandle);
+            callTimeoutHandle = setTimeout(() => {
+                if (peerConnection && peerConnection.connectionState !== 'connected' && peerConnection.iceConnectionState !== 'connected') {
+                    hangUpCall(true);
+                    showModal('Call Timeout', 'The receiver did not pick up within 10 seconds.');
+                    logHistory("Disconnected", `Call to code ${targetCode} timed out (no answer).`);
+                }
+            }, 10000);
+
             checkAnswerInterval(myCode, targetCode, pc);
         }
 
         function checkAnswerInterval(myCode, targetCode, pc) {
             const poll = setInterval(async () => {
+                if (!peerConnection) {
+                    clearInterval(poll);
+                    return;
+                }
+
                 if (localStorage.getItem(`callp2p_hangup_${targetCode}_to_${myCode}`)) {
                     clearInterval(poll);
                     hangUpCall(false);
+                    showModal('Call Ended', 'The remote party declined or ended the call.');
                     return;
                 }
 
@@ -1035,22 +1057,23 @@
                     clearInterval(poll);
                     const answerDesc = new RTCSessionDescription(JSON.parse(answerPayload));
                     await pc.setRemoteDescription(answerDesc);
-                    document.getElementById('call-state-label').textContent = "Secure Voice Channel Active";
-                    startCallTimer();
-                    logHistory("Connected", `Voice call established with station code ${targetCode}`);
                 }
-            }, 1000);
+            }, 500);
         }
+
+        let lastHandledSignalKey = null;
 
         function startBackgroundPolling(myCode) {
             if (pollInterval) clearInterval(pollInterval);
 
+            // Accelerated polling interval (500ms) for immediate responsiveness
             pollInterval = setInterval(async () => {
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (key && key.startsWith('callp2p_hangup_') && key.endsWith(`_to_${myCode}`)) {
                         if (peerConnection) {
                             hangUpCall(false);
+                            closeModal();
                             showModal('Call Ended', "The remote party has ended the call.");
                         }
                         localStorage.removeItem(key);
@@ -1064,7 +1087,8 @@
                         const callerCode = key.split('_')[2];
                         const offerPayload = localStorage.getItem(key);
 
-                        if (offerPayload && (!peerConnection || peerConnection.signalingState === "stable")) {
+                        if (offerPayload && key !== lastHandledSignalKey && (!peerConnection || peerConnection.signalingState === "stable")) {
+                            lastHandledSignalKey = key;
                             const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
                             
                             const actionsHTML = `
@@ -1076,7 +1100,7 @@
                         }
                     }
                 }
-            }, 1500);
+            }, 500);
         }
 
         async function acceptIncomingCall(myCode, callerCode, signalKey) {
@@ -1109,6 +1133,11 @@
         }
 
         function hangUpCall(broadcast = true) {
+            if (callTimeoutHandle) {
+                clearTimeout(callTimeoutHandle);
+                callTimeoutHandle = null;
+            }
+
             const currentUser = localStorage.getItem('callp2p_current');
             const myCode = currentUser ? localStorage.getItem('callp2p_user_code_' + currentUser) : null;
 
@@ -1194,7 +1223,6 @@
             loadHistory();
         }
 
-        // Clears any leftover active session state on load so it always opens at the login screen
         window.onload = function() {
             localStorage.removeItem('callp2p_current');
         };
