@@ -69,6 +69,7 @@
             display: none !important;
         }
 
+        /* --- MODAL OVERLAY --- */
         #custom-modal-backdrop {
             position: absolute;
             top: 0;
@@ -118,6 +119,7 @@
             flex: 1;
         }
 
+        /* --- AUTHENTICATION SCREEN --- */
         #auth-wrapper {
             display: flex;
             justify-content: center;
@@ -274,6 +276,7 @@
             text-align: center;
         }
 
+        /* --- CONSOLE INTERFACE --- */
         #console-wrapper {
             display: flex;
             flex-direction: column;
@@ -378,6 +381,7 @@
             margin-bottom: 1.25rem;
         }
 
+        /* --- CALL LAYOUT --- */
         .call-layout {
             display: grid;
             grid-template-columns: 1fr 260px;
@@ -458,6 +462,7 @@
             letter-spacing: 2px;
         }
 
+        /* --- LOGS TABLE --- */
         .log-table-container {
             background: rgba(30, 41, 59, 0.4);
             border: 1px solid var(--panel-border);
@@ -509,9 +514,10 @@
     <div class="app-shell">
         <div class="app-watermark">Created By LW Devs</div>
 
+        <!-- MODAL OVERLAY -->
         <div id="custom-modal-backdrop" class="hidden">
             <div class="custom-modal">
-                <h3 id="modal-title">Notice</h3>
+                <h3 id="modal-title">Notification</h3>
                 <p id="modal-message">Message text goes here...</p>
                 <div id="modal-actions-container" class="modal-actions">
                     <button class="btn btn-success" onclick="closeModal()">OK</button>
@@ -519,6 +525,7 @@
             </div>
         </div>
 
+        <!-- AUTH VIEW -->
         <div id="auth-wrapper">
             <div class="auth-card">
                 <div class="auth-brand">
@@ -531,6 +538,7 @@
                     <button class="auth-tab" onclick="switchAuthTab('signup')">Register</button>
                 </div>
 
+                <!-- Sign In Form -->
                 <form id="signin-form" onsubmit="handleSignIn(event)">
                     <div class="form-group">
                         <label>Username</label>
@@ -547,6 +555,7 @@
                     <div id="si-error" class="error-msg"></div>
                 </form>
 
+                <!-- Sign Up Form -->
                 <form id="signup-form" class="hidden" onsubmit="handleSignUp(event)">
                     <div class="form-group">
                         <label>Username</label>
@@ -565,6 +574,7 @@
             </div>
         </div>
 
+        <!-- CONSOLE VIEW -->
         <div id="console-wrapper" class="hidden">
             <header class="console-header">
                 <div class="user-badge">
@@ -582,6 +592,7 @@
                 </nav>
 
                 <main class="content-area">
+                    <!-- CALL PANE -->
                     <div id="pane-call" class="tab-pane">
                         <h2 class="pane-heading">Direct Voice Channel</h2>
                         
@@ -594,7 +605,9 @@
                                 </div>
 
                                 <div class="call-controls-row">
+                                    <!-- Professional looking Hang Up / Disconnect button -->
                                     <button class="btn btn-danger" onclick="hangUpCall(true)" style="max-width: 180px; margin: 0 auto; gap: 0.5rem; font-weight: 500;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.33a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="23" y1="1" x2="1" y2="23"></line></svg>
                                         End Call
                                     </button>
                                 </div>
@@ -620,6 +633,7 @@
                         </div>
                     </div>
 
+                    <!-- HISTORY PANE -->
                     <div id="pane-history" class="tab-pane hidden">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
                             <h2 class="pane-heading" style="margin-bottom: 0;">Session Logs</h2>
@@ -640,18 +654,10 @@
                         </div>
                     </div>
 
+                    <!-- SETTINGS PANE -->
                     <div id="pane-settings" class="tab-pane hidden">
                         <h2 class="pane-heading">Operator Settings</h2>
-
-                        <div class="card-box" style="margin-bottom: 1.25rem;">
-                            <label>Ringtone Pattern Style</label>
-                            <select id="ringtone-select" class="form-control" style="margin-top: 0.5rem;" onchange="updateRingtoneSelection(this.value)">
-                                <option value="classic">Classic Telephone Ring (Dual Tone)</option>
-                                <option value="chime">Digital Marimba Chime</option>
-                                <option value="pulse">Subtle Radar Pulse</option>
-                            </select>
-                        </div>
-
+                        
                         <div class="card-box" style="margin-bottom: 1.25rem;">
                             <label>Background Theme Tint</label>
                             <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
@@ -685,11 +691,11 @@
         </div>
     </div>
 
+    <!-- Hidden audio element container -->
     <div id="audio-streams-container"></div>
 
     <script>
         let globalAudioCtx = null;
-        let activeRingtoneInterval = null;
 
         function getAudioContext() {
             if (!globalAudioCtx) {
@@ -700,85 +706,6 @@
                 globalAudioCtx.resume();
             }
             return globalAudioCtx;
-        }
-
-        function updateRingtoneSelection(val) {
-            const currentUser = localStorage.getItem('callp2p_current');
-            if (currentUser) {
-                localStorage.setItem('callp2p_ringtone_' + currentUser, val);
-            }
-        }
-
-        function playRingtoneBeep() {
-            const ctx = getAudioContext();
-            const currentUser = localStorage.getItem('callp2p_current');
-            const style = currentUser ? (localStorage.getItem('callp2p_ringtone_' + currentUser) || 'classic') : 'classic';
-
-            const now = ctx.currentTime;
-            const osc1 = ctx.createOscillator();
-            const osc2 = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-
-            osc1.connect(gainNode);
-            osc2.connect(gainNode);
-            gainNode.connect(ctx.destination);
-
-            if (style === 'chime') {
-                osc1.type = 'sine';
-                osc2.type = 'triangle';
-                osc1.frequency.setValueAtTime(523.25, now);
-                osc2.frequency.setValueAtTime(659.25, now);
-                gainNode.gain.setValueAtTime(0.15, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-                osc1.start(now); osc2.start(now);
-                osc1.stop(now + 0.6); osc2.stop(now + 0.6);
-            } else if (style === 'pulse') {
-                osc1.type = 'sine';
-                osc2.type = 'sine';
-                osc1.frequency.setValueAtTime(440, now);
-                osc2.frequency.setValueAtTime(444, now);
-                gainNode.gain.setValueAtTime(0.1, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                osc1.start(now); osc2.start(now);
-                osc1.stop(now + 0.3); osc2.stop(now + 0.3);
-            } else {
-                osc1.type = 'sine';
-                osc2.type = 'sine';
-                osc1.frequency.setValueAtTime(440, now);
-                osc2.frequency.setValueAtTime(480, now);
-                gainNode.gain.setValueAtTime(0.12, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-                osc1.start(now); osc2.start(now);
-                osc1.stop(now + 0.8); osc2.stop(now + 0.8);
-            }
-        }
-
-        function startRingtoneLoop() {
-            stopRingtoneLoop();
-            playRingtoneBeep();
-            const currentUser = localStorage.getItem('callp2p_current');
-            const style = currentUser ? (localStorage.getItem('callp2p_ringtone_' + currentUser) || 'classic') : 'classic';
-            const intervalTime = style === 'pulse' ? 500 : 1800;
-
-            activeRingtoneInterval = setInterval(() => {
-                playRingtoneBeep();
-            }, intervalTime);
-        }
-
-        function stopRingtoneLoop() {
-            if (activeRingtoneInterval) {
-                clearInterval(activeRingtoneInterval);
-                activeRingtoneInterval = null;
-            }
-        }
-
-        function triggerIncomingCallAlert(callerName, callerCode, myCode, signalKey) {
-            startRingtoneLoop();
-            const actionsHTML = `
-                <button class="btn btn-danger" onclick="rejectIncomingCall('${myCode}', '${callerCode}', '${signalKey}')">Decline</button>
-                <button class="btn btn-success" onclick="acceptIncomingCall('${myCode}', '${callerCode}', '${signalKey}')">Accept</button>
-            `;
-            showModal('Incoming Call', `Incoming call from operator: ${callerName} (Code: ${callerCode})`, actionsHTML);
         }
 
         function togglePasswordVisibility(fieldId, btnElement) {
@@ -879,7 +806,6 @@
 
         function bootConsole(username) {
             getAudioContext();
-
             document.getElementById('auth-wrapper').classList.add('hidden');
             document.getElementById('console-wrapper').classList.remove('hidden');
             document.getElementById('user-display').textContent = username;
@@ -898,13 +824,8 @@
                 document.getElementById('bg-color-picker').value = savedBg;
             }
 
-            const savedRingtone = localStorage.getItem('callp2p_ringtone_' + username);
-            if (savedRingtone) {
-                document.getElementById('ringtone-select').value = savedRingtone;
-            }
-
             loadHistory();
-            startStorageEventListener(permCode);
+            startBackgroundPolling(permCode);
         }
 
         function handleLogout() {
@@ -969,7 +890,7 @@
                 <button class="btn" onclick="closeModal()">Cancel</button>
                 <button class="btn btn-danger" onclick="executeDeleteAccount()">Yes, Delete</button>
             `;
-            showModal('Confirm Deletion', 'Are you sure you want to permanently delete your account?', actionsHTML);
+            showModal('Confirm Deletion', 'Are you sure you want to permanently delete your account? This action cannot be undone.', actionsHTML);
         }
 
         function executeDeleteAccount() {
@@ -981,7 +902,6 @@
                 if (myCode) localStorage.removeItem('callp2p_code_map_' + myCode);
                 localStorage.removeItem('callp2p_history_' + currentUser);
                 localStorage.removeItem('callp2p_theme_' + currentUser);
-                localStorage.removeItem('callp2p_ringtone_' + currentUser);
             }
             closeModal();
             handleLogout();
@@ -1015,6 +935,7 @@
 
         let localStream = null;
         let peerConnection = null;
+        let pollInterval = null;
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
         async function startAudioMedia() {
@@ -1023,7 +944,7 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 return localStream;
             } catch (err) {
-                showModal('Microphone Error', "Could not access microphone.");
+                showModal('Microphone Error', "Could not access microphone. Check permission settings.");
                 return null;
             }
         }
@@ -1044,7 +965,7 @@
                 remoteAudio.playsInline = true;
                 remoteAudio.srcObject = event.streams[0];
                 document.getElementById('audio-streams-container').appendChild(remoteAudio);
-                remoteAudio.play().catch(err => console.error(err));
+                remoteAudio.play().catch(err => console.error("Audio playback prevented:", err));
 
                 try {
                     const source = audioCtx.createMediaStreamSource(event.streams[0]);
@@ -1101,44 +1022,69 @@
 
             document.getElementById('call-state-label').textContent = `Calling ${peerUsername}...`;
             logHistory("Outgoing", `Voice call initiated to station code ${targetCode}`);
+
+            checkAnswerInterval(myCode, targetCode, pc);
         }
 
-        function startStorageEventListener(myCode) {
-            window.addEventListener('storage', (event) => {
-                if (!event.key) return;
-
-                if (event.key.startsWith('callp2p_hangup_') && event.key.endsWith(`_to_${myCode}`)) {
-                    if (peerConnection) {
-                        hangUpCall(false);
-                        showModal('Call Ended', "The remote party has ended the call.");
-                    }
-                    localStorage.removeItem(event.key);
+        function checkAnswerInterval(myCode, targetCode, pc) {
+            const poll = setInterval(async () => {
+                if (localStorage.getItem(`callp2p_hangup_${targetCode}_to_${myCode}`)) {
+                    clearInterval(poll);
+                    hangUpCall(false);
+                    return;
                 }
 
-                if (event.key.startsWith('callp2p_signal_') && event.key.endsWith(`_to_${myCode}`)) {
-                    const callerCode = event.key.split('_')[2];
-                    const payload = event.newValue;
+                const answerPayload = localStorage.getItem(`callp2p_signal_${targetCode}_to_${myCode}`);
+                if (answerPayload && !pc.currentRemoteDescription) {
+                    clearInterval(poll);
+                    const answerDesc = new RTCSessionDescription(JSON.parse(answerPayload));
+                    await pc.setRemoteDescription(answerDesc);
+                    document.getElementById('call-state-label').textContent = "Secure Voice Channel Active";
+                    startCallTimer();
+                    logHistory("Connected", `Voice call established with station code ${targetCode}`);
+                }
+            }, 1000);
+        }
 
-                    if (payload) {
-                        try {
-                            const data = JSON.parse(payload);
-                            if (data.type === 'offer') {
-                                if (!peerConnection || peerConnection.signalingState === "stable") {
-                                    const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
-                                    triggerIncomingCallAlert(callerName, callerCode, myCode, event.key);
-                                }
-                            } else if (data.type === 'answer' && peerConnection) {
-                                peerConnection.setRemoteDescription(new RTCSessionDescription(data));
-                            }
-                        } catch(e) {}
+        function startBackgroundPolling(myCode) {
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(async () => {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('callp2p_hangup_') && key.endsWith(`_to_${myCode}`)) {
+                        if (peerConnection) {
+                            hangUpCall(false);
+                            showModal('Call Ended', "The remote party has ended the call.");
+                        }
+                        localStorage.removeItem(key);
+                        break;
                     }
                 }
-            });
+
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('callp2p_signal_') && key.endsWith(`_to_${myCode}`)) {
+                        const callerCode = key.split('_')[2];
+                        const offerPayload = localStorage.getItem(key);
+
+                        if (offerPayload && (!peerConnection || peerConnection.signalingState === "stable")) {
+                            const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
+                            
+                            const actionsHTML = `
+                                <button class="btn btn-danger" onclick="rejectIncomingCall('${myCode}', '${callerCode}', '${key}')">Decline</button>
+                                <button class="btn btn-success" onclick="acceptIncomingCall('${myCode}', '${callerCode}', '${key}')">Accept</button>
+                            `;
+                            showModal('Incoming Call', `Incoming call from operator: ${callerName} (Code: ${callerCode})`, actionsHTML);
+                            break;
+                        }
+                    }
+                }
+            }, 1500);
         }
 
         async function acceptIncomingCall(myCode, callerCode, signalKey) {
             getAudioContext();
-            stopRingtoneLoop();
             const offerPayload = localStorage.getItem(signalKey);
             localStorage.removeItem(signalKey);
             closeModal();
@@ -1160,7 +1106,6 @@
         }
 
         function rejectIncomingCall(myCode, callerCode, signalKey) {
-            stopRingtoneLoop();
             localStorage.removeItem(signalKey);
             localStorage.setItem(`callp2p_hangup_${myCode}_to_${callerCode}`, Date.now().toString());
             logHistory("Disconnected", `Declined incoming call from code ${callerCode}`);
@@ -1168,7 +1113,6 @@
         }
 
         function hangUpCall(broadcast = true) {
-            stopRingtoneLoop();
             const currentUser = localStorage.getItem('callp2p_current');
             const myCode = currentUser ? localStorage.getItem('callp2p_user_code_' + currentUser) : null;
 
@@ -1255,6 +1199,7 @@
         }
 
         window.onload = function() {
+            // Clear any active session state on load/page exit/return so user always starts at log-in
             localStorage.removeItem('callp2p_current');
         };
     </script>
