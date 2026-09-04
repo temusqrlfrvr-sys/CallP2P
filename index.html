@@ -511,7 +511,7 @@
 
         <div id="custom-modal-backdrop" class="hidden">
             <div class="custom-modal">
-                <h3 id="modal-title">Notification</h3>
+                <h3 id="modal-title">Notice</h3>
                 <p id="modal-message">Message text goes here...</p>
                 <div id="modal-actions-container" class="modal-actions">
                     <button class="btn btn-success" onclick="closeModal()">OK</button>
@@ -642,12 +642,6 @@
 
                     <div id="pane-settings" class="tab-pane hidden">
                         <h2 class="pane-heading">Operator Settings</h2>
-                        
-                        <div class="card-box" style="margin-bottom: 1.25rem;">
-                            <label>Notifications & Ringtone Permissions</label>
-                            <p style="font-size: 0.8125rem; color: var(--text-muted); margin: 0.5rem 0 1rem 0;">Enable site browser alerts to receive system desktop notifications and ringtones during incoming calls.</p>
-                            <button class="btn" style="width: auto;" onclick="requestNotificationPermission()">Enable Site Notifications</button>
-                        </div>
 
                         <div class="card-box" style="margin-bottom: 1.25rem;">
                             <label>Ringtone Pattern Style</label>
@@ -694,15 +688,6 @@
     <div id="audio-streams-container"></div>
 
     <script>
-        // Register Service Worker for Real System OS Notifications
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((reg) => console.log('Service Worker registered scope:', reg.scope))
-                    .catch((err) => console.error('Service Worker registration failed:', err));
-            });
-        }
-
         let globalAudioCtx = null;
         let activeRingtoneInterval = null;
 
@@ -715,20 +700,6 @@
                 globalAudioCtx.resume();
             }
             return globalAudioCtx;
-        }
-
-        function requestNotificationPermission() {
-            if (!("Notification" in window)) {
-                showModal('Unsupported', 'This browser does not support desktop notifications.');
-                return;
-            }
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    showModal('Success', 'Site notifications enabled successfully.');
-                } else {
-                    showModal('Permission Denied', 'Notification permissions were blocked or dismissed.');
-                }
-            });
         }
 
         function updateRingtoneSelection(val) {
@@ -801,25 +772,8 @@
             }
         }
 
-        async function triggerSystemOSNotification(callerName, callerCode) {
-            if (("Notification" in window) && Notification.permission === "granted") {
-                try {
-                    const registration = await navigator.serviceWorker.ready;
-                    registration.showNotification("Incoming Direct Call", {
-                        body: `Operator ${callerName} (Code: ${callerCode}) is calling your station.`,
-                        tag: 'callp2p-incoming',
-                        requireInteraction: true
-                    });
-                } catch (e) {
-                    console.error("OS Notification error:", e);
-                }
-            }
-        }
-
         function triggerIncomingCallAlert(callerName, callerCode, myCode, signalKey) {
             startRingtoneLoop();
-            triggerSystemOSNotification(callerName, callerCode);
-
             const actionsHTML = `
                 <button class="btn btn-danger" onclick="rejectIncomingCall('${myCode}', '${callerCode}', '${signalKey}')">Decline</button>
                 <button class="btn btn-success" onclick="acceptIncomingCall('${myCode}', '${callerCode}', '${signalKey}')">Accept</button>
@@ -926,10 +880,6 @@
         function bootConsole(username) {
             getAudioContext();
 
-            if ("Notification" in window && Notification.permission === "default") {
-                Notification.requestPermission();
-            }
-
             document.getElementById('auth-wrapper').classList.add('hidden');
             document.getElementById('console-wrapper').classList.remove('hidden');
             document.getElementById('user-display').textContent = username;
@@ -954,7 +904,7 @@
             }
 
             loadHistory();
-            startBackgroundPolling(permCode);
+            startStorageEventListener(permCode);
         }
 
         function handleLogout() {
@@ -1065,7 +1015,6 @@
 
         let localStream = null;
         let peerConnection = null;
-        let pollInterval = null;
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
         async function startAudioMedia() {
@@ -1152,60 +1101,39 @@
 
             document.getElementById('call-state-label').textContent = `Calling ${peerUsername}...`;
             logHistory("Outgoing", `Voice call initiated to station code ${targetCode}`);
-
-            checkAnswerInterval(myCode, targetCode, pc);
         }
 
-        function checkAnswerInterval(myCode, targetCode, pc) {
-            const poll = setInterval(async () => {
-                if (localStorage.getItem(`callp2p_hangup_${targetCode}_to_${myCode}`)) {
-                    clearInterval(poll);
-                    hangUpCall(false);
-                    return;
+        function startStorageEventListener(myCode) {
+            window.addEventListener('storage', (event) => {
+                if (!event.key) return;
+
+                if (event.key.startsWith('callp2p_hangup_') && event.key.endsWith(`_to_${myCode}`)) {
+                    if (peerConnection) {
+                        hangUpCall(false);
+                        showModal('Call Ended', "The remote party has ended the call.");
+                    }
+                    localStorage.removeItem(event.key);
                 }
 
-                const answerPayload = localStorage.getItem(`callp2p_signal_${targetCode}_to_${myCode}`);
-                if (answerPayload && !pc.currentRemoteDescription) {
-                    clearInterval(poll);
-                    const answerDesc = new RTCSessionDescription(JSON.parse(answerPayload));
-                    await pc.setRemoteDescription(answerDesc);
-                    document.getElementById('call-state-label').textContent = "Secure Voice Channel Active";
-                    startCallTimer();
-                    logHistory("Connected", `Voice call established with station code ${targetCode}`);
-                }
-            }, 1000);
-        }
+                if (event.key.startsWith('callp2p_signal_') && event.key.endsWith(`_to_${myCode}`)) {
+                    const callerCode = event.key.split('_')[2];
+                    const payload = event.newValue;
 
-        function startBackgroundPolling(myCode) {
-            if (pollInterval) clearInterval(pollInterval);
-
-            pollInterval = setInterval(async () => {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith('callp2p_hangup_') && key.endsWith(`_to_${myCode}`)) {
-                        if (peerConnection) {
-                            hangUpCall(false);
-                            showModal('Call Ended', "The remote party has ended the call.");
-                        }
-                        localStorage.removeItem(key);
-                        break;
+                    if (payload) {
+                        try {
+                            const data = JSON.parse(payload);
+                            if (data.type === 'offer') {
+                                if (!peerConnection || peerConnection.signalingState === "stable") {
+                                    const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
+                                    triggerIncomingCallAlert(callerName, callerCode, myCode, event.key);
+                                }
+                            } else if (data.type === 'answer' && peerConnection) {
+                                peerConnection.setRemoteDescription(new RTCSessionDescription(data));
+                            }
+                        } catch(e) {}
                     }
                 }
-
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith('callp2p_signal_') && key.endsWith(`_to_${myCode}`)) {
-                        const callerCode = key.split('_')[2];
-                        const offerPayload = localStorage.getItem(key);
-
-                        if (offerPayload && (!peerConnection || peerConnection.signalingState === "stable")) {
-                            const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
-                            triggerIncomingCallAlert(callerName, callerCode, myCode, key);
-                            break;
-                        }
-                    }
-                }
-            }, 1500);
+            });
         }
 
         async function acceptIncomingCall(myCode, callerCode, signalKey) {
