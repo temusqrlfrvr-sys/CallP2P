@@ -1194,9 +1194,9 @@
             loadHistory();
         }
 
+        // Clears any leftover active session state on load so it always opens at the login screen
         window.onload = function() {
-            const current = localStorage.getItem('callp2p_current');
-            if (current) bootConsole(current);
+            localStorage.removeItem('callp2p_current');
         };
     </script>
 </body>
