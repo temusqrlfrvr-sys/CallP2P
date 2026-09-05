@@ -3,1404 +3,1382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CallP2P | Direct Voice Link</title>
+    <title>Modern Firebase Chat Dashboard</title>
     <style>
         :root {
-            --bg-gradient: radial-gradient(circle at top right, #1e293b, #0f172a, #020617);
-            --panel-bg: rgba(15, 23, 42, 0.85);
-            --panel-border: rgba(255, 255, 255, 0.08);
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --success: #10b981;
-            --radius-lg: 14px;
-            --radius-md: 8px;
-            --transition: all 0.2s ease-in-out;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #6c757d;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border-color: #e5e7eb;
+            --sidebar-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --card-bg: #1f2937;
+            --text-color: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --border-color: #374151;
+            --sidebar-bg: #1f2937;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         body {
-            background: var(--bg-gradient);
-            color: var(--text-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
-        }
-
-        .app-shell {
-            width: 100%;
-            max-width: 800px;
-            height: 540px;
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--panel-border);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
             position: relative;
         }
 
-        .app-watermark {
-            position: absolute;
-            bottom: 8px;
-            right: 14px;
-            font-size: 0.65rem;
+        /* Created By Watermark */
+        .lw-watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 15px;
+            font-size: 11px;
+            font-weight: 600;
             color: var(--text-muted);
-            opacity: 0.6;
+            opacity: 0.7;
             pointer-events: none;
-            z-index: 1000;
             letter-spacing: 0.5px;
+            z-index: 9999;
         }
 
-        .hidden {
-            display: none !important;
-        }
-
-        /* --- MODAL OVERLAY --- */
-        #custom-modal-backdrop {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .container {
             width: 100%;
-            height: 100%;
-            background: rgba(2, 6, 23, 0.8);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
+            max-width: 450px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .auth-container {
+            padding: 30px;
+        }
+
+        /* Tabs Header */
+        .tabs {
             display: flex;
-            justify-content: center;
-            align-items: center;
+            margin-bottom: 25px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            padding: 4px;
         }
 
-        .custom-modal {
-            width: 100%;
-            max-width: 380px;
-            background: #1e293b;
-            border: 1px solid var(--panel-border);
-            padding: 1.75rem;
-            border-radius: var(--radius-lg);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-            text-align: left;
-        }
-
-        .custom-modal h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text-main);
-        }
-
-        .custom-modal p {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            margin-bottom: 1.25rem;
-            line-height: 1.4;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-
-        .modal-actions .btn {
+        .tab-btn {
             flex: 1;
-        }
-
-        /* --- AUTHENTICATION SCREEN --- */
-        #auth-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex: 1;
-            padding: 2rem;
-        }
-
-        .auth-card {
-            width: 100%;
-            max-width: 380px;
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid var(--panel-border);
-            padding: 2rem;
-            border-radius: var(--radius-lg);
-        }
-
-        .auth-brand {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .auth-brand h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .auth-brand p {
-            color: var(--text-muted);
-            font-size: 0.8125rem;
-            margin-top: 0.2rem;
-        }
-
-        .auth-tabs {
-            display: flex;
-            background: rgba(0, 0, 0, 0.25);
-            padding: 3px;
-            border-radius: var(--radius-md);
-            margin-bottom: 1.25rem;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 0.5rem;
-            background: none;
+            padding: 10px;
             border: none;
-            color: var(--text-muted);
-            font-size: 0.8125rem;
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: var(--transition);
-        }
-
-        .auth-tab.active {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.4rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .password-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.625rem 0.875rem;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid var(--panel-border);
-            border-radius: var(--radius-md);
-            color: var(--text-main);
-            font-size: 0.875rem;
-            outline: none;
-            transition: var(--transition);
-        }
-
-        .password-container .form-control {
-            padding-right: 4.5rem;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 0.5rem;
             background: transparent;
-            border: none;
-            color: var(--text-muted);
             cursor: pointer;
-            font-size: 0.7rem;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 0.3rem 0.5rem;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
+            color: var(--text-muted);
+            border-radius: 6px;
         }
 
-        .toggle-password:hover {
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
+        .tab-btn.active {
+            background: var(--card-bg);
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* Forms */
+        .form-panel {
+            display: none;
+        }
+
+        .form-panel.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            border-radius: 6px;
+            outline: none;
         }
 
         .btn {
             width: 100%;
-            padding: 0.625rem 1rem;
+            padding: 12px;
             background: var(--primary);
             color: white;
             border: none;
-            border-radius: var(--radius-md);
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn:hover { background: var(--primary-hover); }
-        .btn-danger { background: var(--danger); }
-        .btn-danger:hover { background: #dc2626; }
-        .btn-success { background: var(--success); }
-        .btn-success:hover { background: #059669; }
-
-        .error-msg {
-            color: var(--danger);
-            font-size: 0.75rem;
-            margin-top: 0.5rem;
-            text-align: center;
-        }
-
-        /* --- CONSOLE INTERFACE --- */
-        #console-wrapper {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .console-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.875rem 1.25rem;
-            background: rgba(15, 23, 42, 0.5);
-            border-bottom: 1px solid var(--panel-border);
-        }
-
-        .user-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.625rem;
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-
-        .user-badge strong { color: var(--text-main); }
-
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            background: var(--success);
-            border-radius: 50%;
-        }
-
-        .btn-outline-danger {
-            background: transparent;
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-            padding: 0.3rem 0.75rem;
             border-radius: 6px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 500;
-            transition: var(--transition);
+            margin-top: 10px;
         }
 
-        .btn-outline-danger:hover {
-            background: var(--danger);
-            color: white;
+        .btn:hover {
+            background: var(--primary-hover);
         }
 
-        .console-body {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
+        /* Dashboard Layout */
+        #dashboard-view {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: var(--bg-color);
+            flex-direction: row;
         }
 
         .sidebar {
-            width: 180px;
-            background: rgba(15, 23, 42, 0.3);
-            border-right: 1px solid var(--panel-border);
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            padding: 0.75rem 0;
-            gap: 2px;
+            padding: 20px;
         }
 
-        .nav-item {
-            padding: 0.625rem 1rem;
-            background: none;
-            border: none;
-            text-align: left;
+        .sidebar h2 {
+            font-size: 20px;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .sidebar small {
             color: var(--text-muted);
-            font-size: 0.8125rem;
-            font-weight: 500;
-            cursor: pointer;
-            border-left: 2px solid transparent;
-            transition: var(--transition);
+            margin-bottom: 20px;
+            display: block;
         }
 
-        .nav-item:hover {
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .nav-item.active {
-            color: var(--text-main);
-            background: rgba(59, 130, 246, 0.08);
-            border-left-color: var(--primary);
-            font-weight: 600;
-        }
-
-        .content-area {
+        .nav-links {
+            list-style: none;
             flex: 1;
-            padding: 1.75rem;
+        }
+
+        .nav-links li {
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .nav-links li.active, .nav-links li:hover {
+            background: var(--bg-color);
+            color: var(--primary);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .content-panel.active {
+            display: flex;
+        }
+
+        /* Chat Dashboard Controls */
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .room-list {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            background: var(--card-bg);
             overflow-y: auto;
         }
 
-        .pane-heading {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 1.25rem;
-        }
-
-        /* --- CALL LAYOUT --- */
-        .call-layout {
-            display: grid;
-            grid-template-columns: 1fr 260px;
-            gap: 1.25rem;
-            height: calc(100% - 40px);
-        }
-
-        .call-main-panel {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid var(--panel-border);
-            border-radius: var(--radius-md);
+        .room-item {
+            padding: 12px;
+            background: var(--bg-color);
+            border-radius: 6px;
+            margin-bottom: 10px;
             display: flex;
-            flex-direction: column;
             justify-content: space-between;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .call-status-indicator {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
         }
 
-        .pulse-ring {
-            width: 64px;
-            height: 64px;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 50%;
+        /* Active Room Layout with Collapsible Right Sidebar */
+        .active-room-wrapper {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: var(--primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .call-state-text {
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: var(--text-main);
-        }
-
-        .call-timer {
-            font-family: monospace;
-            font-size: 1.25rem;
-            color: var(--text-muted);
-        }
-
-        .call-sidebar-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .card-box {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid var(--panel-border);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-        }
-
-        .card-box label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 0.375rem;
-        }
-
-        .code-display-value {
-            font-family: monospace;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #60a5fa;
-            letter-spacing: 2px;
-        }
-
-        /* --- LOGS & BLOCK TABLE --- */
-        .log-table-container {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid var(--panel-border);
-            border-radius: var(--radius-md);
+            flex: 1;
+            gap: 15px;
             overflow: hidden;
         }
 
-        .log-table {
+        .chat-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Collapsible Member Sidebar */
+        .room-sidebar {
+            width: 240px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+        }
+
+        .room-sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            border: none;
+        }
+
+        .room-sidebar h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .room-member-list-box {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        /* Active Room Chat Box */
+        .chat-box {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+            padding: 15px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-msg {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--bg-color);
+            max-width: 70%;
+            word-break: break-word;
+            position: relative;
+            cursor: pointer;
+        }
+        .chat-msg:hover {
+            opacity: 0.95;
+        }
+
+        .chat-msg .sender-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .msg-reactions {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .reaction-badge {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        /* Settings Panel Layout */
+        .settings-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+        }
+
+        .settings-item {
+            margin-bottom: 20px;
+        }
+
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #6b7280; }
+        .btn-secondary:hover { background: #4b5563; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
+
+        /* Admin Tables */
+        .admin-table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .admin-table th, .admin-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
             text-align: left;
-            font-size: 0.8125rem;
+            font-size: 13px;
         }
-
-        .log-table th {
-            background: rgba(15, 23, 42, 0.6);
-            color: var(--text-muted);
-            padding: 0.75rem 1rem;
+        .admin-table th {
+            background: var(--bg-color);
             font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            border-bottom: 1px solid var(--panel-border);
         }
 
-        .log-table td {
-            padding: 0.875rem 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            color: var(--text-main);
-        }
-
-        .log-badge {
-            display: inline-flex;
+        /* Popups / Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
             align-items: center;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
+            z-index: 1000;
         }
-
-        .log-badge.connected { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-        .log-badge.outgoing { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-        .log-badge.disconnected { background: rgba(239, 68, 68, 0.15); color: #f87171; }
-        .log-badge.default { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
 
-    <div class="app-shell">
-        <div class="app-watermark">Created By LW Devs</div>
-
-        <!-- MODAL OVERLAY -->
-        <div id="custom-modal-backdrop" class="hidden">
-            <div class="custom-modal">
-                <h3 id="modal-title">Notification</h3>
-                <p id="modal-message">Message text goes here...</p>
-                <div id="modal-actions-container" class="modal-actions">
-                    <button class="btn btn-success" onclick="closeModal()">OK</button>
-                </div>
+    <!-- AUTHENTICATION CONTAINER -->
+    <div class="container" id="auth-container" style="display: block;">
+        <div class="auth-container">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchAuthTab('login')">Login</button>
+                <button class="tab-btn" onclick="switchAuthTab('signup')">Sign Up</button>
             </div>
-        </div>
 
-        <!-- AUTH VIEW -->
-        <div id="auth-wrapper">
-            <div class="auth-card">
-                <div class="auth-brand">
-                    <h1>CallP2P</h1>
-                    <p>Direct Peer-to-Peer Voice Link</p>
+            <!-- Login Form -->
+            <div id="login-panel" class="form-panel active">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" placeholder="Enter email">
                 </div>
-
-                <div class="auth-tabs">
-                    <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
-                    <button class="auth-tab" onclick="switchAuthTab('signup')">Register</button>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-pass" placeholder="Enter password">
                 </div>
-
-                <!-- Sign In Form -->
-                <form id="signin-form" onsubmit="handleSignIn(event)">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="si-username" class="form-control" required autocomplete="username">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <div class="password-container">
-                            <input type="password" id="si-password" class="form-control" required autocomplete="current-password">
-                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('si-password', this)">Show</button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn">Authenticate</button>
-                    <div id="si-error" class="error-msg"></div>
-                </form>
-
-                <!-- Sign Up Form -->
-                <form id="signup-form" class="hidden" onsubmit="handleSignUp(event)">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="su-username" class="form-control" required autocomplete="username">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <div class="password-container">
-                            <input type="password" id="su-password" class="form-control" required autocomplete="new-password">
-                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('su-password', this)">Show</button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn">Create Profile</button>
-                    <div id="su-error" class="error-msg"></div>
-                </form>
+                <button class="btn" onclick="handleLogin()">Login</button>
             </div>
-        </div>
 
-        <!-- CONSOLE VIEW -->
-        <div id="console-wrapper" class="hidden">
-            <header class="console-header">
-                <div class="user-badge">
-                    <div class="status-dot"></div>
-                    <span>Operator: <strong id="user-display"></strong></span>
+            <!-- Sign Up Form -->
+            <div id="signup-panel" class="form-panel">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="signup-email" placeholder="Enter email">
                 </div>
-                <button class="btn-outline-danger" onclick="handleLogout()">Sign Out</button>
-            </header>
-
-            <div class="console-body">
-                <nav class="sidebar">
-                    <button class="nav-item active" onclick="switchTab('call', this)">Direct Call</button>
-                    <button class="nav-item" onclick="switchTab('blocklist', this)">Blocklist</button>
-                    <button class="nav-item" onclick="switchTab('history', this)">Session Logs</button>
-                    <button class="nav-item" onclick="switchTab('settings', this)">Settings</button>
-                </nav>
-
-                <main class="content-area">
-                    <!-- CALL PANE -->
-                    <div id="pane-call" class="tab-pane">
-                        <h2 class="pane-heading">Direct Voice Channel</h2>
-                        
-                        <div class="call-layout">
-                            <div class="call-main-panel">
-                                <div class="call-status-indicator">
-                                    <div class="pulse-ring">🎙️</div>
-                                    <div id="call-state-label" class="call-state-text">Ready to initiate direct link</div>
-                                    <div id="call-timer-display" class="call-timer">00:00</div>
-                                </div>
-
-                                <div class="call-controls-row">
-                                    <button class="btn btn-danger" onclick="hangUpCall(true)" style="max-width: 160px; margin: 0 auto;">Disconnect</button>
-                                </div>
-                            </div>
-
-                            <div class="call-sidebar-panel">
-                                <div class="card-box">
-                                    <label>Your Station Code</label>
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span id="permanent-code-display" class="code-display-value">----</span>
-                                        <button class="btn" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="copyMyCode()">Copy</button>
-                                    </div>
-                                </div>
-
-                                <div class="card-box" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-                                    <div>
-                                        <label>Target Station Code</label>
-                                        <input type="text" id="target-code-input" class="form-control" placeholder="Enter 4-digit code" maxlength="4" style="font-weight: 600; letter-spacing: 1px; margin-top: 0.25rem;">
-                                    </div>
-                                    <button class="btn btn-success" onclick="callPeerByCode()" style="margin-top: 0.75rem;">Connect Call</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- BLOCKLIST PANE -->
-                    <div id="pane-blocklist" class="tab-pane hidden">
-                        <h2 class="pane-heading">Blocked Station Numbers</h2>
-                        
-                        <div class="card-box" style="margin-bottom: 1.25rem;">
-                            <label>Block New Number</label>
-                            <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
-                                <input type="text" id="block-input-code" class="form-control" placeholder="Enter 4-digit code" maxlength="4" style="font-weight: 600; letter-spacing: 1px;">
-                                <button class="btn btn-danger" style="width: auto; padding: 0.5rem 1rem;" onclick="blockPeerCode()">Block</button>
-                            </div>
-                        </div>
-
-                        <div class="log-table-container">
-                            <table class="log-table">
-                                <thead>
-                                    <tr>
-                                        <th>Station Code</th>
-                                        <th>Operator Name</th>
-                                        <th style="text-align: right;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="blocklist-table-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- HISTORY PANE -->
-                    <div id="pane-history" class="tab-pane hidden">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                            <h2 class="pane-heading" style="margin-bottom: 0;">Session Logs</h2>
-                            <button class="btn btn-danger" style="width: auto; padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="clearHistoryLogs()">Clear Logs</button>
-                        </div>
-                        
-                        <div class="log-table-container">
-                            <table class="log-table">
-                                <thead>
-                                    <tr>
-                                        <th>Status</th>
-                                        <th>Description</th>
-                                        <th>Timestamp</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-table-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- SETTINGS PANE -->
-                    <div id="pane-settings" class="tab-pane hidden">
-                        <h2 class="pane-heading">Operator Settings</h2>
-                        
-                        <div class="card-box" style="margin-bottom: 1.25rem;">
-                            <label>Background Theme Tint</label>
-                            <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
-                                <input type="color" id="bg-color-picker" class="form-control" style="width: 60px; padding: 2px; height: 38px; cursor: pointer;" value="#0f172a" onchange="updateThemeColor(this.value)">
-                                <button class="btn" style="width: auto; padding: 0.5rem 1rem;" onclick="resetThemeColor()">Reset Default</button>
-                            </div>
-                        </div>
-
-                        <div class="card-box" style="margin-bottom: 1.25rem;">
-                            <label>Reset Account Password</label>
-                            <form onsubmit="handlePasswordReset(event)" style="margin-top: 0.5rem;">
-                                <div class="form-group" style="margin-bottom: 0.75rem;">
-                                    <label style="font-size: 0.7rem;">New Password</label>
-                                    <div class="password-container">
-                                        <input type="password" id="set-new-password" class="form-control" required autocomplete="new-password">
-                                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('set-new-password', this)">Show</button>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn" style="width: auto;">Update Password</button>
-                            </form>
-                        </div>
-
-                        <div class="card-box" style="border-color: rgba(239, 68, 68, 0.3);">
-                            <label style="color: var(--danger);">Danger Zone</label>
-                            <p style="font-size: 0.8125rem; color: var(--text-muted); margin: 0.5rem 0 1rem 0;">Permanently delete your account profile and release your station code.</p>
-                            <button class="btn btn-danger" style="width: auto;" onclick="confirmDeleteAccount()">Delete Account</button>
-                        </div>
-                    </div>
-                </main>
+                <div class="input-group">
+                    <label>Choose Password</label>
+                    <input type="password" id="signup-pass" placeholder="Create password">
+                </div>
+                <button class="btn" onclick="handleSignUp()">Create Account</button>
             </div>
         </div>
     </div>
 
-    <!-- Hidden audio element container -->
-    <div id="audio-streams-container"></div>
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboard-view" style="display: none;">
+        <div class="sidebar">
+            <h2>Messenger</h2>
+            <small id="logged-in-user-label">Logged in as: </small>
+            <ul class="nav-links">
+                <li id="nav-chat-tab" class="active" onclick="switchDashboardTab('chat', event)">Chat Rooms</li>
+                <li id="nav-admin-tab" style="display:none;" onclick="switchDashboardTab('admin', event)">Admin Panel</li>
+                <li id="nav-settings-tab" onclick="switchDashboardTab('settings', event)">Settings</li>
+            </ul>
+        </div>
 
-    <script>
-        let globalAudioCtx = null;
+        <div class="main-content">
+            <!-- Chat Tab Panel (Room List) -->
+            <div id="chat-panel" class="content-panel active">
+                <div class="chat-actions">
+                    <button class="btn" style="width: auto;" onclick="openCreateModal()">Create Room</button>
+                    <button class="btn btn-secondary" style="width: auto;" onclick="openJoinModal()">Join Room</button>
+                </div>
+                <h3>Your Rooms</h3><br>
+                <div class="room-list" id="room-list-container">
+                    <!-- Rooms dynamically injected here -->
+                </div>
+            </div>
 
-        function getAudioContext() {
-            if (!globalAudioCtx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                globalAudioCtx = new AudioContext();
+            <!-- Active Room Chat Panel -->
+            <div id="room-chat-panel" class="content-panel">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                    <div>
+                        <h3 id="active-room-title">Room Name</h3>
+                        <small id="active-room-owner-label" style="color:var(--text-muted);"></small>
+                    </div>
+                    <div style="display:flex; gap: 8px;">
+                        <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin: 0;" onclick="toggleRoomSidebar()">👥 Members</button>
+                        <button id="room-controls-btn" class="btn btn-warning" style="width: auto; padding: 6px 12px; margin: 0; display:none;" onclick="openRoomControlsModal()">Room Controls</button>
+                        <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin: 0;" onclick="backToRoomList()">Back to Rooms</button>
+                    </div>
+                </div>
+                
+                <div class="active-room-wrapper">
+                    <div class="chat-column">
+                        <div class="chat-box" id="active-chat-box">
+                            <div class="chat-msg"><i>Welcome to the room! Messages sync in real-time via Firebase.</i></div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="room-message-input" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)">
+                            <button class="btn" style="width: auto; margin:0;" onclick="sendRoomMessage()">Send</button>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible Sidebar for Members and Online Status -->
+                    <div class="room-sidebar" id="room-collapsible-sidebar">
+                        <h4>Room Members & Status</h4>
+                        <div class="room-member-list-box" id="collapsible-member-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Panel Tab -->
+            <div id="admin-panel" class="content-panel">
+                <h3>Admin Panel (LWAdmin Access)</h3><br>
+                <div style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 10px;">All Platform Users</h4>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Joined Rooms</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="margin-bottom: 10px;">All Chat Groups / Rooms</h4>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Room Name</th>
+                                    <th>Owner</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-rooms-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab Panel -->
+            <div id="settings-panel" class="content-panel">
+                <h3>Preferences & Controls</h3><br>
+                <div class="settings-card">
+                    <div class="settings-item">
+                        <label>Background Theme</label>
+                        <select id="theme-selector" onchange="changeTheme(this.value)">
+                            <option value="light">White (Light)</option>
+                            <option value="dark">Black (Dark)</option>
+                        </select>
+                    </div>
+                    <div class="settings-item">
+                        <button class="btn btn-secondary" onclick="resetPassword()">Reset Password</button>
+                    </div>
+                    <div class="settings-item">
+                        <button class="btn btn-danger" onclick="deleteAccount()">Delete Account</button>
+                    </div>
+                    <div class="settings-item" style="margin-bottom: 0;">
+                        <button class="btn" onclick="signOut()">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE ROOM MODAL -->
+    <div class="modal" id="create-room-modal">
+        <div class="modal-content">
+            <h3>Create Chat Room</h3>
+            <div class="input-group" style="margin-top: 15px;">
+                <label>Room Name</label>
+                <input type="text" id="new-room-name" placeholder="e.g. Study Group">
+            </div>
+            <div class="input-group">
+                <label>4-Digit Join Code</label>
+                <input type="text" id="new-room-code" maxlength="4" placeholder="e.g. 1234">
+            </div>
+            <button class="btn" onclick="confirmCreateRoom()">Create</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- JOIN ROOM MODAL -->
+    <div class="modal" id="join-room-modal">
+        <div class="modal-content">
+            <h3>Join Chat Room</h3>
+            <div class="input-group" style="margin-top: 15px;">
+                <label>Enter 4-Digit Code</label>
+                <input type="text" id="join-room-code" maxlength="4" placeholder="e.g. 1234">
+            </div>
+            <button class="btn" onclick="confirmJoinRoom()">Join</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- MESSAGE ACTION MODAL -->
+    <div class="modal" id="msg-action-modal">
+        <div class="modal-content" style="text-align: center;">
+            <h3>Message Options</h3>
+            <p id="selected-msg-preview" style="margin: 15px 0; color: var(--text-muted); font-style: italic;"></p>
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; margin-bottom: 8px; font-weight:600;">Add Reaction Emoji:</label>
+                <div style="display: flex; justify-content: center; gap: 10px; font-size: 24px;">
+                    <span style="cursor:pointer;" onclick="addReactionToMsg('👍')">👍</span>
+                    <span style="cursor:pointer;" onclick="addReactionToMsg('❤️')">❤️</span>
+                    <span style="cursor:pointer;" onclick="addReactionToMsg('😂')">😂</span>
+                    <span style="cursor:pointer;" onclick="addReactionToMsg('🔥')">🔥</span>
+                    <span style="cursor:pointer;" onclick="addReactionToMsg('🚀')">🚀</span>
+                </div>
+            </div>
+            <button class="btn btn-danger" style="margin-bottom: 10px;" onclick="reportCurrentMessage()">Report Message</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ROOM OWNER CONTROLS MODAL -->
+    <div class="modal" id="room-controls-modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <h3>Room Controls (Owner Panel)</h3>
+            <div style="margin-top: 15px;">
+                <h4 style="margin-bottom: 8px;">Online / Joined Members</h4>
+                <div id="room-members-list" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; margin-bottom: 15px;">
+                    <!-- Members injected here -->
+                </div>
+                <h4 style="margin-bottom: 8px;">Banned Users List</h4>
+                <div id="room-banned-list" style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; margin-bottom: 15px;">
+                    <!-- Banned users injected here -->
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <!-- Watermark UI element -->
+    <div class="lw-watermark">Created By LW Devs</div>
+
+    <!-- FIREBASE SDKs (Modular v10) with Session Persistence -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getAuth, 
+            setPersistence,
+            browserSessionPersistence,
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut as fbSignOut, 
+            sendPasswordResetEmail, 
+            deleteUser, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            getDocs,
+            deleteDoc,
+            updateDoc,
+            arrayUnion, 
+            arrayRemove,
+            query, 
+            addDoc, 
+            onSnapshot, 
+            orderBy 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAotwXoPkHGxselCOWH2mw51x4VuhDJUzY",
+            authDomain: "chatbase-634c8.firebaseapp.com",
+            projectId: "chatbase-634c8",
+            storageBucket: "chatbase-634c8.firebasestorage.app",
+            messagingSenderId: "798124008105",
+            appId: "1:798124008105:web:ec5d06d89f4008c4fa7fb8",
+            measurementId: "G-RMM389DKK2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        setPersistence(auth, browserSessionPersistence).catch((error) => {
+            console.error("Persistence setting error:", error);
+        });
+
+        let currentUser = null;
+        let currentOpenRoom = null;
+        let selectedMsgForAction = null;
+        let unsubscribeMessages = null;
+        let unsubscribePresence = null;
+        let presenceInterval = null;
+
+        window.switchAuthTab = function(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+            
+            if(tab === 'login') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('login-panel').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('signup-panel').classList.add('active');
             }
-            if (globalAudioCtx.state === 'suspended') {
-                globalAudioCtx.resume();
+        };
+
+        window.handleSignUp = async function() {
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-pass').value.trim();
+
+            if (!email || !password) {
+                alert('Please enter both email and password.');
+                return;
             }
-            return globalAudioCtx;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // New accounts start with an empty room list (no longer auto-assigned to 0000)
+                await setDoc(doc(db, "users", user.uid), {
+                    email: user.email,
+                    rooms: []
+                });
+
+                alert('Account created successfully!');
+            } catch (error) {
+                console.error("Sign up full error:", error);
+                alert('Sign up error: ' + error.message);
+            }
+        };
+
+        window.handleLogin = async function() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-pass').value.trim();
+
+            if (!email || !password) {
+                alert('Please enter both email and password.');
+                return;
+            }
+
+            if (email === 'LWAdmin' || email === 'LWAdmin@lwdevs.com') {
+                try {
+                    let adminCred;
+                    try {
+                        adminCred = await signInWithEmailAndPassword(auth, email.includes('@') ? email : 'LWAdmin@lwdevs.com', password);
+                    } catch (e) {
+                        adminCred = await createUserWithEmailAndPassword(auth, 'LWAdmin@lwdevs.com', password);
+                    }
+                    await setDoc(doc(db, "users", adminCred.user.uid), {
+                        email: 'LWAdmin@lwdevs.com',
+                        isAdmin: true,
+                        rooms: []
+                    }, { merge: true });
+                } catch (err) {
+                    console.log("Admin auto-login handle:", err);
+                }
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email.includes('@') ? email : 'LWAdmin@lwdevs.com', password);
+            } catch (error) {
+                if (email === 'LWAdmin') {
+                    try {
+                        const created = await createUserWithEmailAndPassword(auth, 'LWAdmin@lwdevs.com', password);
+                        await setDoc(doc(db, "users", created.user.uid), { email: 'LWAdmin@lwdevs.com', isAdmin: true, rooms: [] });
+                        return;
+                    } catch(innerErr) {
+                        alert('Login failed: ' + error.message);
+                        return;
+                    }
+                }
+                console.error("Login full error:", error);
+                alert('Login failed: ' + error.message);
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                
+                const userDocRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userDocRef);
+                let userData = userSnap.exists() ? userSnap.data() : {};
+                
+                if (user.email === 'LWAdmin@lwdevs.com' || userData.isAdmin) {
+                    userData.isAdmin = true;
+                    await setDoc(userDocRef, { isAdmin: true }, { merge: true });
+                    document.getElementById('nav-admin-tab').style.display = 'block';
+                } else {
+                    document.getElementById('nav-admin-tab').style.display = 'none';
+                }
+
+                document.getElementById('logged-in-user-label').innerText = `Logged in as: ${user.email}`;
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('dashboard-view').style.display = 'flex';
+                loadUserRooms();
+            } else {
+                currentUser = null;
+                if (unsubscribeMessages) unsubscribeMessages();
+                if (unsubscribePresence) unsubscribePresence();
+                if (presenceInterval) clearInterval(presenceInterval);
+                document.getElementById('dashboard-view').style.display = 'none';
+                document.getElementById('auth-container').style.display = 'block';
+                window.switchAuthTab('login');
+            }
+        });
+
+        async function loadUserRooms() {
+            if (!currentUser) return;
+            try {
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userSnap = await getDoc(userDocRef);
+                
+                let roomCodes = [];
+                if (userSnap.exists()) {
+                    roomCodes = userSnap.data().rooms || [];
+                } else {
+                    await setDoc(userDocRef, { email: currentUser.email, rooms: [] }, { merge: true });
+                }
+
+                const container = document.getElementById('room-list-container');
+                container.innerHTML = '';
+
+                if (roomCodes.length === 0) {
+                    container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding: 20px;">You have not joined any rooms yet. Create or join one above!</div>';
+                    return;
+                }
+
+                for (let code of roomCodes) {
+                    const roomDocRef = doc(db, "rooms", code);
+                    const roomSnap = await getDoc(roomDocRef);
+                    if (roomSnap.exists()) {
+                        const roomData = roomSnap.data();
+                        const isOwner = roomData.owner === currentUser.email;
+                        
+                        // Hide code from UI unless the user is the room owner
+                        const displayCodeInfo = isOwner ? `Code: ${roomData.code} (Owner)` : `Owner: ${roomData.owner}`;
+                        
+                        container.innerHTML += `
+                            <div class="room-item">
+                                <div>
+                                    <strong>${roomData.name}</strong> 
+                                    <small style="color:var(--text-muted); display:block;">${displayCodeInfo}</small>
+                                </div>
+                                <button class="btn" style="width: auto; padding: 6px 12px; margin: 0;" onclick="openRoomByCode('${roomData.code}', '${roomData.name}')">Open</button>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading rooms:", error);
+            }
         }
 
-        // Web Audio Ringtone Generator (Classic telephone ring cadence)
-        let ringtoneInterval = null;
+        window.openRoomByCode = async function(code, name) {
+            const roomRef = doc(db, "rooms", code);
+            const roomSnap = await getDoc(roomRef);
+            let roomOwner = '';
+            if (roomSnap.exists()) {
+                const data = roomSnap.data();
+                roomOwner = data.owner || '';
+                const bannedList = data.banned || [];
+                if (bannedList.includes(currentUser.email)) {
+                    alert("Access Denied: You have been banned from this room by the owner.");
+                    return;
+                }
+            }
 
-        function startRingtone() {
-            stopRingtone();
-            const ctx = getAudioContext();
+            currentOpenRoom = { code, name, owner: roomOwner };
             
-            const playBeeps = () => {
-                if (!ringtoneInterval) return;
-                try {
-                    const now = ctx.currentTime;
-                    // Dual tones (440Hz & 480Hz)
-                    const osc1 = ctx.createOscillator();
-                    const osc2 = ctx.createOscillator();
-                    const gain = ctx.createGain();
+            // Only show the 4-digit code in the title if the logged-in user is the owner
+            const isRoomOwner = roomOwner === currentUser.email;
+            if (isRoomOwner) {
+                document.getElementById('active-room-title').innerText = `${name} (Code: ${code})`;
+            } else {
+                document.getElementById('active-room-title').innerText = `${name}`;
+            }
+            
+            document.getElementById('active-room-owner-label').innerText = `Owner: ${roomOwner}`;
+            document.getElementById('room-controls-btn').style.display = isRoomOwner ? 'inline-block' : 'none';
+            
+            document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('room-chat-panel').classList.add('active');
 
-                    osc1.frequency.setValueAtTime(440, now);
-                    osc2.frequency.setValueAtTime(480, now);
+            updateUserPresence(code, true);
+            if (presenceInterval) clearInterval(presenceInterval);
+            presenceInterval = setInterval(() => updateUserPresence(code, true), 15000);
+
+            if (unsubscribeMessages) unsubscribeMessages();
+            if (unsubscribePresence) unsubscribePresence();
+
+            // Listen to real-time member presence in this room
+            const presenceColRef = collection(db, "rooms", code, "presence");
+            unsubscribePresence = onSnapshot(presenceColRef, (snapshot) => {
+                const memberBox = document.getElementById('collapsible-member-list');
+                let memberHtml = '';
+                const now = Date.now();
+
+                snapshot.forEach(docSnap => {
+                    const p = docSnap.data();
+                    const isOnline = (now - p.lastSeen) < 30000;
+                    memberHtml += `
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom: 1px solid var(--border-color);">
+                            <span style="overflow:hidden; text-overflow:ellipsis;" title="${p.email}">${p.email}</span>
+                            <span style="font-size:11px; color:${isOnline ? '#10b981' : 'var(--text-muted)'}; margin-left:6px;">● ${isOnline ? 'Online' : 'Offline'}</span>
+                        </div>
+                    `;
+                });
+                memberBox.innerHTML = memberHtml || '<span style="color:var(--text-muted); font-size:12px;">No active members</span>';
+            });
+            
+            const msgQuery = query(collection(db, "rooms", code, "messages"), orderBy("timestamp", "asc"));
+            unsubscribeMessages = onSnapshot(msgQuery, (snapshot) => {
+                const chatBox = document.getElementById('active-chat-box');
+                let html = '<div class="chat-msg"><i>Welcome to the room! Messages sync in real-time.</i></div>';
+                
+                snapshot.forEach((docSnap) => {
+                    const m = docSnap.data();
+                    const msgId = docSnap.id;
+                    const isSelf = m.sender === currentUser.email;
+                    const alignStyle = isSelf ? 'margin-left: auto; background: var(--primary); color: white;' : 'margin-right: auto;';
                     
-                    gain.gain.setValueAtTime(0.15, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    let reactionsHtml = '';
+                    if (m.reactions) {
+                        reactionsHtml = '<div class="msg-reactions">';
+                        for (let [emoji, users] of Object.entries(m.reactions)) {
+                            reactionsHtml += `<span class="reaction-badge">${emoji} ${users.length}</span>`;
+                        }
+                        reactionsHtml += '</div>';
+                    }
 
-                    osc1.connect(gain);
-                    osc2.connect(gain);
-                    gain.connect(ctx.destination);
+                    let reportsBadge = '';
+                    if (m.reports && m.reports.length > 0 && (isRoomOwner || currentUser.email === 'LWAdmin@lwdevs.com')) {
+                        reportsBadge = `<span style="font-size:10px; background:#ef4444; color:white; padding:2px 4px; border-radius:4px; margin-left:6px;">Reported (${m.reports.length})</span>`;
+                    }
 
-                    osc1.start(now);
-                    osc2.start(now);
-                    osc1.stop(now + 0.4);
-                    osc2.stop(now + 0.4);
-                } catch(e) {}
-            };
-
-            playBeeps();
-            ringtoneInterval = setInterval(playBeeps, 2000); // Rings every 2 seconds
-        }
-
-        function stopRingtone() {
-            if (ringtoneInterval) {
-                clearInterval(ringtoneInterval);
-                ringtoneInterval = null;
-            }
-        }
-
-        function togglePasswordVisibility(fieldId, btnElement) {
-            const field = document.getElementById(fieldId);
-            if (field.type === 'password') {
-                field.type = 'text';
-                btnElement.textContent = 'Hide';
-            } else {
-                field.type = 'password';
-                btnElement.textContent = 'Show';
-            }
-        }
-
-        function showModal(title, message, actionsHTML = null) {
-            getAudioContext();
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            
-            const actionsContainer = document.getElementById('modal-actions-container');
-            if (actionsHTML) {
-                actionsContainer.innerHTML = actionsHTML;
-            } else {
-                actionsContainer.innerHTML = `<button class="btn btn-success" onclick="closeModal()">OK</button>`;
-            }
-
-            document.getElementById('custom-modal-backdrop').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            stopRingtone();
-            document.getElementById('custom-modal-backdrop').classList.add('hidden');
-        }
-
-        function switchAuthTab(tab) {
-            const siForm = document.getElementById('signin-form');
-            const suForm = document.getElementById('signup-form');
-            const tabs = document.querySelectorAll('.auth-tab');
-            
-            tabs.forEach(t => t.classList.remove('active'));
-            if(tab === 'signin') {
-                siForm.classList.remove('hidden');
-                suForm.classList.add('hidden');
-                tabs[0].classList.add('active');
-            } else {
-                suForm.classList.remove('hidden');
-                siForm.classList.add('hidden');
-                tabs[1].classList.add('active');
-            }
-        }
-
-        function generatePermanentCode() {
-            return Math.floor(1000 + Math.random() * 9000).toString();
-        }
-
-        function handleSignUp(e) {
-            e.preventDefault();
-            const user = document.getElementById('su-username').value.trim();
-            const pass = document.getElementById('su-password').value;
-            const err = document.getElementById('su-error');
-
-            if(localStorage.getItem('callp2p_user_' + user)) {
-                err.textContent = "Error: Username is already taken.";
-                return;
-            }
-
-            let permCode = generatePermanentCode();
-            while(localStorage.getItem('callp2p_code_map_' + permCode)) {
-                permCode = generatePermanentCode();
-            }
-
-            localStorage.setItem('callp2p_user_' + user, pass);
-            localStorage.setItem('callp2p_user_code_' + user, permCode);
-            localStorage.setItem('callp2p_code_map_' + permCode, user);
-
-            showModal('Registration Complete', `Account registered! Your voice code is: ${permCode}`);
-            switchAuthTab('signin');
-            document.getElementById('signup-form').reset();
-            err.textContent = "";
-        }
-
-        function handleSignIn(e) {
-            e.preventDefault();
-            const user = document.getElementById('si-username').value.trim();
-            const pass = document.getElementById('si-password').value;
-            const err = document.getElementById('si-error');
-
-            const savedPass = localStorage.getItem('callp2p_user_' + user);
-
-            if(!savedPass || savedPass !== pass) {
-                err.textContent = "Error: Invalid username or password!";
-                return;
-            }
-
-            localStorage.setItem('callp2p_current', user);
-            bootConsole(user);
-        }
-
-        let activeRemoteCode = null;
-
-        function bootConsole(username) {
-            getAudioContext();
-            document.getElementById('auth-wrapper').classList.add('hidden');
-            document.getElementById('console-wrapper').classList.remove('hidden');
-            document.getElementById('user-display').textContent = username;
-            
-            let permCode = localStorage.getItem('callp2p_user_code_' + username);
-            if(!permCode) {
-                permCode = generatePermanentCode();
-                localStorage.setItem('callp2p_user_code_' + username, permCode);
-                localStorage.setItem('callp2p_code_map_' + permCode, username);
-            }
-            document.getElementById('permanent-code-display').textContent = permCode;
-            
-            const savedBg = localStorage.getItem('callp2p_theme_' + username);
-            if (savedBg) {
-                applyThemeColor(savedBg);
-                document.getElementById('bg-color-picker').value = savedBg;
-            }
-
-            loadHistory();
-            loadBlocklist();
-            startBackgroundPolling(permCode);
-        }
-
-        function handleLogout() {
-            hangUpCall(true);
-            localStorage.removeItem('callp2p_current');
-            document.getElementById('console-wrapper').classList.add('hidden');
-            document.getElementById('auth-wrapper').classList.remove('hidden');
-            document.getElementById('signin-form').reset();
-            switchAuthTab('signin');
-        }
-
-        function copyMyCode() {
-            const code = document.getElementById('permanent-code-display').textContent;
-            navigator.clipboard.writeText(code);
-            showModal('Clipboard', "Code copied to clipboard: " + code);
-        }
-
-        function switchTab(name, element) {
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-            document.getElementById('pane-' + name).classList.remove('hidden');
-            element.classList.add('active');
-            if(name === 'history') loadHistory();
-            if(name === 'blocklist') loadBlocklist();
-        }
-
-        function applyThemeColor(hexColor) {
-            document.documentElement.style.setProperty('--bg-gradient', `radial-gradient(circle at top right, #1e293b, ${hexColor}, #020617)`);
-        }
-
-        function updateThemeColor(color) {
-            const currentUser = localStorage.getItem('callp2p_current');
-            if (currentUser) {
-                localStorage.setItem('callp2p_theme_' + currentUser, color);
-            }
-            applyThemeColor(color);
-        }
-
-        function resetThemeColor() {
-            const currentUser = localStorage.getItem('callp2p_current');
-            if (currentUser) {
-                localStorage.removeItem('callp2p_theme_' + currentUser);
-            }
-            document.documentElement.style.setProperty('--bg-gradient', 'radial-gradient(circle at top right, #1e293b, #0f172a, #020617)');
-            document.getElementById('bg-color-picker').value = '#0f172a';
-            showModal('Settings', 'Background theme reset to default.');
-        }
-
-        function handlePasswordReset(e) {
-            e.preventDefault();
-            const currentUser = localStorage.getItem('callp2p_current');
-            const newPass = document.getElementById('set-new-password').value;
-            
-            if (currentUser && newPass) {
-                localStorage.setItem('callp2p_user_' + currentUser, newPass);
-                document.getElementById('set-new-password').value = '';
-                showModal('Success', 'Password successfully updated.');
-            }
-        }
-
-        function confirmDeleteAccount() {
-            const actionsHTML = `
-                <button class="btn" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-danger" onclick="executeDeleteAccount()">Yes, Delete</button>
-            `;
-            showModal('Confirm Deletion', 'Are you sure you want to permanently delete your account? This action cannot be undone.', actionsHTML);
-        }
-
-        function executeDeleteAccount() {
-            const currentUser = localStorage.getItem('callp2p_current');
-            if (currentUser) {
-                const myCode = localStorage.getItem('callp2p_user_code_' + currentUser);
-                localStorage.removeItem('callp2p_user_' + currentUser);
-                localStorage.removeItem('callp2p_user_code_' + currentUser);
-                if (myCode) localStorage.removeItem('callp2p_code_map_' + myCode);
-                localStorage.removeItem('callp2p_history_' + currentUser);
-                localStorage.removeItem('callp2p_theme_' + currentUser);
-                localStorage.removeItem('callp2p_blocklist_' + currentUser);
-            }
-            closeModal();
-            handleLogout();
-            showModal('Account Deleted', 'Your profile and station code have been cleared.');
-        }
-
-        // --- BLOCKLIST LOGIC ---
-        function getBlocklist(user) {
-            try {
-                return JSON.parse(localStorage.getItem('callp2p_blocklist_' + user) || '[]');
-            } catch(e) {
-                return [];
-            }
-        }
-
-        function blockPeerCode() {
-            const codeInput = document.getElementById('block-input-code');
-            const code = codeInput.value.trim();
-            if (code.length !== 4) {
-                showModal('Invalid Input', 'Please enter a valid 4-digit code to block.');
-                return;
-            }
-            const user = localStorage.getItem('callp2p_current');
-            const myCode = localStorage.getItem('callp2p_user_code_' + user);
-            if (code === myCode) {
-                showModal('Invalid Operation', 'You cannot block your own code.');
-                return;
-            }
-
-            let list = getBlocklist(user);
-            if (!list.includes(code)) {
-                list.push(code);
-                localStorage.setItem('callp2p_blocklist_' + user, JSON.stringify(list));
-            }
-            codeInput.value = '';
-            loadBlocklist();
-            showModal('Blocklist', `Station code ${code} has been blocked.`);
-        }
-
-        function unblockPeerCode(code) {
-            const user = localStorage.getItem('callp2p_current');
-            let list = getBlocklist(user);
-            list = list.filter(c => c !== code);
-            localStorage.setItem('callp2p_blocklist_' + user, JSON.stringify(list));
-            loadBlocklist();
-        }
-
-        function loadBlocklist() {
-            const user = localStorage.getItem('callp2p_current');
-            const list = getBlocklist(user);
-            const tbody = document.getElementById('blocklist-table-body');
-            if (!tbody) return;
-
-            tbody.innerHTML = '';
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">No station numbers blocked.</td></tr>`;
-                return;
-            }
-
-            list.forEach(code => {
-                const opName = localStorage.getItem('callp2p_code_map_' + code) || 'Unknown Operator';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-family: monospace; font-weight: 600; color: #60a5fa;">${code}</td>
-                    <td>${opName}</td>
-                    <td style="text-align: right;"><button class="btn btn-success" style="width: auto; padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="unblockPeerCode('${code}')">Unblock</button></td>
-                `;
-                tbody.appendChild(tr);
+                    html += `
+                        <div class="chat-msg" style="${alignStyle}" onclick="openMessageActions('${code}', '${msgId}', '${m.text.replace(/'/g, "\\'")}')">
+                            <span class="sender-label" style="${isSelf ? 'color: #e0e7ff;' : ''}">${m.sender} ${reportsBadge}</span>
+                            ${m.text}
+                            ${reactionsHtml}
+                        </div>
+                    `;
+                });
+                chatBox.innerHTML = html;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, (error) => {
+                console.error("Firestore snapshot error:", error);
             });
-        }
+        };
 
-        let callTimerInterval = null;
-        let secondsElapsed = 0;
+        window.toggleRoomSidebar = function() {
+            const sidebar = document.getElementById('room-collapsible-sidebar');
+            sidebar.classList.toggle('collapsed');
+        };
 
-        function startCallTimer() {
-            stopCallTimer();
-            secondsElapsed = 0;
-            updateTimerDisplay();
-            callTimerInterval = setInterval(() => {
-                secondsElapsed++;
-                updateTimerDisplay();
-            }, 1000);
-        }
-
-        function stopCallTimer() {
-            if (callTimerInterval) clearInterval(callTimerInterval);
-            callTimerInterval = null;
-            document.getElementById('call-timer-display').textContent = "00:00";
-        }
-
-        function updateTimerDisplay() {
-            const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
-            const secs = (secondsElapsed % 60).toString().padStart(2, '0');
-            document.getElementById('call-timer-display').textContent = `${mins}:${secs}`;
-        }
-
-        let localStream = null;
-        let peerConnection = null;
-        let pollInterval = null;
-        let callTimeoutHandle = null;
-        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-
-        async function startAudioMedia() {
-            if (localStream) return localStream;
+        async function updateUserPresence(code, active) {
+            if (!currentUser || !currentOpenRoom) return;
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                return localStream;
-            } catch (err) {
-                showModal('Microphone Error', "Could not access microphone. Check permission settings.");
-                return null;
+                const presenceRef = doc(db, "rooms", code, "presence", currentUser.uid);
+                await setDoc(presenceRef, {
+                    email: currentUser.email,
+                    lastSeen: Date.now()
+                });
+            } catch (e) {
+                console.error("Presence update error:", e);
             }
         }
 
-        function initPeerConnection(myCode, targetCode) {
-            if (peerConnection) return peerConnection;
-            activeRemoteCode = targetCode;
-            peerConnection = new RTCPeerConnection(rtcConfig);
-
-            if (localStream) {
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            }
-
-            peerConnection.ontrack = (event) => {
-                const audioCtx = getAudioContext();
-                const remoteAudio = document.createElement('audio');
-                remoteAudio.autoplay = true;
-                remoteAudio.playsInline = true;
-                remoteAudio.srcObject = event.streams[0];
-                document.getElementById('audio-streams-container').appendChild(remoteAudio);
-                remoteAudio.play().catch(err => console.error("Audio playback prevented:", err));
-
+        window.backToRoomList = async function() {
+            if (currentOpenRoom && currentUser) {
                 try {
-                    const source = audioCtx.createMediaStreamSource(event.streams[0]);
-                    source.connect(audioCtx.destination);
-                } catch (e) {}
+                    await deleteDoc(doc(db, "rooms", currentOpenRoom.code, "presence", currentUser.uid));
+                } catch(e) {}
+            }
+            if (presenceInterval) clearInterval(presenceInterval);
+            if (unsubscribeMessages) unsubscribeMessages();
+            if (unsubscribePresence) unsubscribePresence();
+            document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('chat-panel').classList.add('active');
+            loadUserRooms();
+        };
 
-                if (callTimeoutHandle) {
-                    clearTimeout(callTimeoutHandle);
-                    callTimeoutHandle = null;
+        window.sendRoomMessage = async function() {
+            const input = document.getElementById('room-message-input');
+            const msgText = input.value.trim();
+            if (!msgText || !currentOpenRoom) return;
+
+            try {
+                await addDoc(collection(db, "rooms", currentOpenRoom.code, "messages"), {
+                    sender: currentUser.email,
+                    text: msgText,
+                    timestamp: Date.now(),
+                    reactions: {},
+                    reports: []
+                });
+                input.value = '';
+            } catch (error) {
+                console.error("Error sending message:", error);
+            }
+        };
+
+        window.handleChatKeyPress = function(event) {
+            if(event.key === 'Enter') {
+                window.sendRoomMessage();
+            }
+        };
+
+        window.openMessageActions = function(roomCode, msgId, text) {
+            selectedMsgForAction = { roomCode, msgId };
+            document.getElementById('selected-msg-preview').innerText = `"${text}"`;
+            document.getElementById('msg-action-modal').style.display = 'flex';
+        };
+
+        window.addReactionToMsg = async function(emoji) {
+            if (!selectedMsgForAction) return;
+            const { roomCode, msgId } = selectedMsgForAction;
+            try {
+                const msgRef = doc(db, "rooms", roomCode, "messages", msgId);
+                const msgSnap = await getDoc(msgRef);
+                if (msgSnap.exists()) {
+                    const data = msgSnap.data();
+                    let reactions = data.reactions || {};
+                    if (!reactions[emoji]) {
+                        reactions[emoji] = [currentUser.email];
+                    } else {
+                        if (!reactions[emoji].includes(currentUser.email)) {
+                            reactions[emoji].push(currentUser.email);
+                        } else {
+                            reactions[emoji] = reactions[emoji].filter(e => e !== currentUser.email);
+                            if (reactions[emoji].length === 0) delete reactions[emoji];
+                        }
+                    }
+                    await updateDoc(msgRef, { reactions });
                 }
+                closeModals();
+            } catch (e) {
+                console.error("Reaction error:", e);
+                alert("Error adding emoji reaction.");
+            }
+        };
 
-                document.getElementById('call-state-label').textContent = "Secure Voice Channel Active";
-                startCallTimer();
-                logHistory("Connected", "Peer voice stream connected successfully");
-            };
+        window.reportCurrentMessage = async function() {
+            if (!selectedMsgForAction) return;
+            const { roomCode, msgId } = selectedMsgForAction;
+            try {
+                const msgRef = doc(db, "rooms", roomCode, "messages", msgId);
+                await updateDoc(msgRef, {
+                    reports: arrayUnion(currentUser.email)
+                });
+                alert("Message reported to room owner and administrators.");
+                closeModals();
+            } catch (e) {
+                console.error("Report error:", e);
+                alert("Error reporting message.");
+            }
+        };
 
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate === null) {
-                    const payload = JSON.stringify(peerConnection.localDescription);
-                    // Use a unique generation tag so repeated calls always update the signal key fresh
-                    const ts = Date.now();
-                    localStorage.setItem(`callp2p_signal_${myCode}_to_${targetCode}`, JSON.stringify({ ts, desc: peerConnection.localDescription }));
+        window.openRoomControlsModal = async function() {
+            if (!currentOpenRoom) return;
+            const code = currentOpenRoom.code;
+
+            const presenceSnap = await getDocs(collection(db, "rooms", code, "presence"));
+            let membersHtml = '';
+            const now = Date.now();
+            
+            presenceSnap.forEach(docSnap => {
+                const p = docSnap.data();
+                const isOnline = (now - p.lastSeen) < 30000;
+                if (p.email !== currentOpenRoom.owner) {
+                    membersHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <strong>${p.email}</strong>
+                                <span style="font-size:11px; color:${isOnline ? '#10b981' : 'var(--text-muted)'}; margin-left: 6px;">● ${isOnline ? 'Online' : 'Offline'}</span>
+                            </div>
+                            <div style="display:flex; gap: 4px;">
+                                <button class="btn btn-secondary" style="padding: 2px 6px; font-size:11px; margin:0;" onclick="kickMember('${code}', '${p.email}')">Kick</button>
+                                <button class="btn btn-danger" style="padding: 2px 6px; font-size:11px; margin:0;" onclick="banMember('${code}', '${p.email}')">Ban</button>
+                            </div>
+                        </div>
+                    `;
                 }
-            };
+            });
+            document.getElementById('room-members-list').innerHTML = membersHtml || '<p style="font-size:12px; color:var(--text-muted);">No other active users.</p>';
 
-            return peerConnection;
+            const roomSnap = await getDoc(doc(db, "rooms", code));
+            let bannedHtml = '';
+            if (roomSnap.exists()) {
+                const banned = roomSnap.data().banned || [];
+                banned.forEach(bEmail => {
+                    bannedHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                            <span style="font-size:13px;">${bEmail}</span>
+                            <button class="btn btn-secondary" style="padding: 2px 6px; font-size:11px; margin:0;" onclick="unbanMember('${code}', '${bEmail}')">Unban</button>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('room-banned-list').innerHTML = bannedHtml || '<p style="font-size:12px; color:var(--text-muted);">No banned users.</p>';
+
+            document.getElementById('room-controls-modal').style.display = 'flex';
+        };
+
+        window.kickMember = async function(code, email) {
+            try {
+                const usersSnap = await getDocs(collection(db, "users"));
+                for (let userDoc of usersSnap.docs) {
+                    if (userDoc.data().email === email) {
+                        await updateDoc(userDoc.ref, {
+                            rooms: arrayRemove(code)
+                        });
+                    }
+                }
+                alert(`Successfully kicked ${email} from the room.`);
+                openRoomControlsModal();
+            } catch (e) {
+                alert("Error kicking member: " + e.message);
+            }
+        };
+
+        window.banMember = async function(code, email) {
+            try {
+                const roomRef = doc(db, "rooms", code);
+                await updateDoc(roomRef, {
+                    banned: arrayUnion(email)
+                });
+                await window.kickMember(code, email);
+            } catch (e) {
+                alert("Error banning member: " + e.message);
+            }
+        };
+
+        window.unbanMember = async function(code, email) {
+            try {
+                const roomRef = doc(db, "rooms", code);
+                await updateDoc(roomRef, {
+                    banned: arrayRemove(email)
+                });
+                alert(`Unbanned ${email}.`);
+                openRoomControlsModal();
+            } catch (e) {
+                alert("Error unbanning member: " + e.message);
+            }
+        };
+
+        window.switchDashboardTab = async function(tab, event) {
+            if (unsubscribeMessages) unsubscribeMessages();
+            if (unsubscribePresence) unsubscribePresence();
+            document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+
+            if(event) event.target.classList.add('active');
+            
+            if(tab === 'chat') {
+                document.getElementById('chat-panel').classList.add('active');
+                loadUserRooms();
+            } else if(tab === 'admin') {
+                document.getElementById('admin-panel').classList.add('active');
+                loadAdminPanelData();
+            } else if(tab === 'settings') {
+                document.getElementById('settings-panel').classList.add('active');
+            }
+        };
+
+        async function loadAdminPanelData() {
+            if (!currentUser) return;
+            try {
+                const usersSnap = await getDocs(collection(db, "users"));
+                let usersHtml = '';
+                usersSnap.forEach(docSnap => {
+                    const u = docSnap.data();
+                    const uId = docSnap.id;
+                    const joinedList = (u.rooms || []).join(', ');
+                    usersHtml += `
+                        <tr>
+                            <td>${u.email}</td>
+                            <td>${joinedList}</td>
+                            <td>
+                                <button class="btn btn-warning" style="padding: 2px 6px; font-size: 11px; margin:0; width:auto;" onclick="adminChangePassword('${u.email}')">Change Pass</button>
+                                <button class="btn btn-danger" style="padding: 2px 6px; font-size: 11px; margin:0; width:auto;" onclick="adminDeleteUser('${uId}', '${u.email}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('admin-users-tbody').innerHTML = usersHtml;
+
+                const roomsSnap = await getDocs(collection(db, "rooms"));
+                let roomsHtml = '';
+                roomsSnap.forEach(docSnap => {
+                    const r = docSnap.data();
+                    roomsHtml += `
+                        <tr>
+                            <td>${r.name || 'Unnamed'}</td>
+                            <td>${r.owner || 'System'}</td>
+                            <td>
+                                <button class="btn btn-danger" style="padding: 2px 6px; font-size: 11px; margin:0; width:auto;" onclick="adminDeleteRoom('${r.code}')">Delete Room</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('admin-rooms-tbody').innerHTML = roomsHtml;
+            } catch (e) {
+                console.error("Error loading admin data:", e);
+            }
         }
 
-        async function callPeerByCode() {
-            getAudioContext();
-            const targetInput = document.getElementById('target-code-input');
-            const targetCode = targetInput.value.trim();
-            if(targetCode.length !== 4) {
-                showModal('Invalid Input', "Please enter a valid 4-digit code.");
-                return;
+        window.adminChangePassword = async function(email) {
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert(`Password reset link sent to ${email}`);
+            } catch (e) {
+                alert("Error sending reset email: " + e.message);
             }
+        };
 
-            const currentUser = localStorage.getItem('callp2p_current');
-            const myCode = localStorage.getItem('callp2p_user_code_' + currentUser);
-
-            if(targetCode === myCode) {
-                showModal('Invalid Operation', "You cannot call your own code.");
-                return;
-            }
-
-            // Check blocklist of target or local blocklist
-            const peerBlocklist = getBlocklist(localStorage.getItem('callp2p_code_map_' + targetCode));
-            if (peerBlocklist.includes(myCode)) {
-                showModal('Call Failed', 'Unable to connect to this station.');
-                return;
-            }
-
-            const peerUsername = localStorage.getItem('callp2p_code_map_' + targetCode);
-            if(!peerUsername) {
-                showModal('Station Not Found', "No registered user found with code: " + targetCode);
-                return;
-            }
-
-            const stream = await startAudioMedia();
-            if (!stream) return;
-
-            localStorage.removeItem(`callp2p_hangup_${myCode}_to_${targetCode}`);
-            localStorage.removeItem(`callp2p_hangup_${targetCode}_to_${myCode}`);
-
-            const pc = initPeerConnection(myCode, targetCode);
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-
-            document.getElementById('call-state-label').textContent = `Calling ${peerUsername}...`;
-            logHistory("Outgoing", `Voice call initiated to station code ${targetCode}`);
-
-            // 10-Second Unanswered Timeout implementation
-            if (callTimeoutHandle) clearTimeout(callTimeoutHandle);
-            callTimeoutHandle = setTimeout(() => {
-                if (peerConnection && peerConnection.connectionState !== 'connected' && peerConnection.iceConnectionState !== 'connected') {
-                    hangUpCall(true);
-                    showModal('Call Timeout', 'The receiver did not pick up within 10 seconds.');
-                    logHistory("Disconnected", `Call to code ${targetCode} timed out (no answer).`);
+        window.adminDeleteUser = async function(userId, email) {
+            if (confirm(`Are you sure you want to delete user profile for ${email}?`)) {
+                try {
+                    await deleteDoc(doc(db, "users", userId));
+                    alert("User record deleted from database.");
+                    loadAdminPanelData();
+                } catch (e) {
+                    alert("Error deleting user: " + e.message);
                 }
-            }, 10000);
+            }
+        };
 
-            checkAnswerInterval(myCode, targetCode, pc);
-        }
+        window.adminDeleteRoom = async function(code) {
+            if (confirm(`Are you sure you want to delete room code ${code}?`)) {
+                try {
+                    await deleteDoc(doc(db, "rooms", code));
+                    alert("Room deleted successfully.");
+                    loadAdminPanelData();
+                } catch (e) {
+                    alert("Error deleting room: " + e.message);
+                }
+            }
+        };
 
-        function checkAnswerInterval(myCode, targetCode, pc) {
-            const poll = setInterval(async () => {
-                if (!peerConnection) {
-                    clearInterval(poll);
+        window.changeTheme = function(theme) {
+            if(theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        };
+
+        window.openCreateModal = function() { document.getElementById('create-room-modal').style.display = 'flex'; };
+        window.openJoinModal = function() { document.getElementById('join-room-modal').style.display = 'flex'; };
+        window.closeModals = function() {
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        };
+
+        window.confirmCreateRoom = async function() {
+            const name = document.getElementById('new-room-name').value.trim();
+            const code = document.getElementById('new-room-code').value.trim();
+            
+            if(!name || code.length !== 4) {
+                alert('Please enter a valid room name and a 4-digit code.');
+                return;
+            }
+
+            try {
+                const roomRef = doc(db, "rooms", code);
+                const roomSnap = await getDoc(roomRef);
+
+                if (roomSnap.exists()) {
+                    alert('A room with this 4-digit code already exists!');
                     return;
                 }
 
-                if (localStorage.getItem(`callp2p_hangup_${targetCode}_to_${myCode}`)) {
-                    clearInterval(poll);
-                    hangUpCall(false);
-                    showModal('Call Ended', 'The remote party declined or ended the call.');
-                    return;
-                }
+                await setDoc(roomRef, { name, code, owner: currentUser.email, banned: [] });
 
-                const answerPayload = localStorage.getItem(`callp2p_signal_${targetCode}_to_${myCode}`);
-                if (answerPayload && !pc.currentRemoteDescription) {
-                    clearInterval(poll);
-                    const parsed = JSON.parse(answerPayload);
-                    const answerDesc = new RTCSessionDescription(parsed.desc || parsed);
-                    await pc.setRemoteDescription(answerDesc);
-                }
-            }, 500);
-        }
+                const userDocRef = doc(db, "users", currentUser.uid);
+                await setDoc(userDocRef, {
+                    email: currentUser.email,
+                    rooms: arrayUnion(code)
+                }, { merge: true });
 
-        let lastHandledSignalTimestamp = 0;
-
-        function startBackgroundPolling(myCode) {
-            if (pollInterval) clearInterval(pollInterval);
-
-            pollInterval = setInterval(async () => {
-                const currentUser = localStorage.getItem('callp2p_current');
-                const blockedList = getBlocklist(currentUser);
-
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith('callp2p_hangup_') && key.endsWith(`_to_${myCode}`)) {
-                        if (peerConnection) {
-                            hangUpCall(false);
-                            closeModal();
-                            showModal('Call Ended', "The remote party has ended the call.");
-                        }
-                        localStorage.removeItem(key);
-                        break;
-                    }
-                }
-
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith('callp2p_signal_') && key.endsWith(`_to_${myCode}`)) {
-                        const callerCode = key.split('_')[2];
-
-                        // Skip if caller is blocked
-                        if (blockedList.includes(callerCode)) continue;
-
-                        const rawPayload = localStorage.getItem(key);
-                        if (rawPayload) {
-                            let payloadObj;
-                            try {
-                                payloadObj = JSON.parse(rawPayload);
-                            } catch(e) {
-                                continue;
-                            }
-
-                            const packetTimestamp = payloadObj.ts || 0;
-
-                            if (packetTimestamp > lastHandledSignalTimestamp && (!peerConnection || peerConnection.signalingState === "stable")) {
-                                lastHandledSignalTimestamp = packetTimestamp;
-                                const callerName = localStorage.getItem('callp2p_code_map_' + callerCode) || callerCode;
-                                
-                                // Trigger notification and synthesized ringtone
-                                startRingtone();
-                                
-                                const actionsHTML = `
-                                    <button class="btn btn-danger" onclick="rejectIncomingCall('${myCode}', '${callerCode}', '${key}')">Decline</button>
-                                    <button class="btn btn-success" onclick="acceptIncomingCall('${myCode}', '${callerCode}', '${key}', ${packetTimestamp})">Accept</button>
-                                `;
-                                showModal('Incoming Call', `Incoming call from operator: ${callerName} (Code: ${callerCode})`, actionsHTML);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }, 500);
-        }
-
-        async function acceptIncomingCall(myCode, callerCode, signalKey, packetTimestamp) {
-            getAudioContext();
-            stopRingtone();
-            const rawPayload = localStorage.getItem(signalKey);
-            localStorage.removeItem(signalKey);
-            closeModal();
-
-            if (!rawPayload) return;
-            const parsed = JSON.parse(rawPayload);
-            const offerDesc = parsed.desc || parsed;
-
-            const stream = await startAudioMedia();
-            if (!stream) return;
-
-            localStorage.removeItem(`callp2p_hangup_${myCode}_to_${callerCode}`);
-            localStorage.removeItem(`callp2p_hangup_${callerCode}_to_${myCode}`);
-
-            document.getElementById('call-state-label').textContent = `Connected with Code ${callerCode}`;
-            const pc = initPeerConnection(myCode, callerCode);
-            await pc.setRemoteDescription(new RTCSessionDescription(offerDesc));
-            
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            
-            logHistory("Connected", `Answered incoming voice call from code ${callerCode}`);
-        }
-
-        function rejectIncomingCall(myCode, callerCode, signalKey) {
-            stopRingtone();
-            localStorage.removeItem(signalKey);
-            localStorage.setItem(`callp2p_hangup_${myCode}_to_${callerCode}`, Date.now().toString());
-            logHistory("Disconnected", `Declined incoming call from code ${callerCode}`);
-            closeModal();
-        }
-
-        function hangUpCall(broadcast = true) {
-            stopRingtone();
-            if (callTimeoutHandle) {
-                clearTimeout(callTimeoutHandle);
-                callTimeoutHandle = null;
+                loadUserRooms();
+                window.closeModals();
+                document.getElementById('new-room-name').value = '';
+                document.getElementById('new-room-code').value = '';
+            } catch (error) {
+                console.error("Create room full error:", error);
+                alert('Error creating room: ' + error.message);
             }
+        };
 
-            const currentUser = localStorage.getItem('callp2p_current');
-            const myCode = currentUser ? localStorage.getItem('callp2p_user_code_' + currentUser) : null;
-
-            if (broadcast && peerConnection && activeRemoteCode && myCode) {
-                localStorage.setItem(`callp2p_hangup_${myCode}_to_${activeRemoteCode}`, Date.now().toString());
-            }
-
-            if(peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            if(localStream) {
-                localStream.getTracks().forEach(t => t.stop());
-                localStream = null;
-            }
-            const targetInput = document.getElementById('target-code-input');
-            if (targetInput) targetInput.value = "";
-            document.getElementById('call-state-label').textContent = "Ready to initiate direct link";
-            activeRemoteCode = null;
-            stopCallTimer();
-            logHistory("Disconnected", "Closed voice call session");
-        }
-
-        function logHistory(status, description) {
-            const user = localStorage.getItem('callp2p_current') || 'guest';
-            const key = 'callp2p_history_' + user;
-            let hist = [];
-            try {
-                hist = JSON.parse(localStorage.getItem(key) || '[]');
-            } catch(e) {}
-            
-            hist.unshift({ 
-                status: status, 
-                description: description, 
-                time: new Date().toLocaleTimeString() + ' ' + new Date().toLocaleDateString() 
-            });
-            
-            try {
-                localStorage.setItem(key, JSON.stringify(hist));
-            } catch(e) {}
-            
-            if (!document.getElementById('pane-history').classList.contains('hidden')) {
-                loadHistory();
-            }
-        }
-
-        function loadHistory() {
-            const user = localStorage.getItem('callp2p_current') || 'guest';
-            const key = 'callp2p_history_' + user;
-            let hist = [];
-            try {
-                hist = JSON.parse(localStorage.getItem(key) || '[]');
-            } catch(e) {}
-            
-            const tbody = document.getElementById('history-table-body');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            if(hist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">No prior session logs recorded.</td></tr>`;
+        window.confirmJoinRoom = async function() {
+            const code = document.getElementById('join-room-code').value.trim();
+            if(code.length !== 4) {
+                alert('Please enter a valid 4-digit code.');
                 return;
             }
 
-            hist.forEach(item => {
-                let badgeClass = 'default';
-                if(item.status === 'Connected') badgeClass = 'connected';
-                else if(item.status === 'Outgoing') badgeClass = 'outgoing';
-                else if(item.status === 'Disconnected') badgeClass = 'disconnected';
+            try {
+                const roomRef = doc(db, "rooms", code);
+                const roomSnap = await getDoc(roomRef);
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><span class="log-badge ${badgeClass}">${item.status}</span></td>
-                    <td style="color: var(--text-main); font-weight: 500;">${item.description}</td>
-                    <td style="color: var(--text-muted); font-size: 0.75rem;">${item.time}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+                if(!roomSnap.exists()) {
+                    alert('Error: No room exists with this 4-digit code!');
+                    return;
+                }
 
-        function clearHistoryLogs() {
-            const user = localStorage.getItem('callp2p_current') || 'guest';
-            localStorage.removeItem('callp2p_history_' + user);
-            loadHistory();
-        }
+                const data = roomSnap.data();
+                if (data.banned && data.banned.includes(currentUser.email)) {
+                    alert('Access Denied: You are banned from joining this room.');
+                    return;
+                }
 
-        window.onload = function() {
-            localStorage.removeItem('callp2p_current');
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userSnap = await getDoc(userDocRef);
+                const joinedRooms = userSnap.exists() ? (userSnap.data().rooms || []) : [];
+
+                if (joinedRooms.includes(code)) {
+                    alert('You have already joined this room.');
+                    window.closeModals();
+                    return;
+                }
+
+                await setDoc(userDocRef, {
+                    email: currentUser.email,
+                    rooms: arrayUnion(code)
+                }, { merge: true });
+
+                loadUserRooms();
+                window.closeModals();
+                document.getElementById('join-room-code').value = '';
+                alert(`Successfully joined room: "${roomSnap.data().name}"!`);
+            } catch (error) {
+                console.error("Join room full error:", error);
+                alert('Error joining room: ' + error.message);
+            }
+        };
+
+        window.resetPassword = async function() {
+            if (!currentUser || !currentUser.email) return;
+            try {
+                await sendPasswordResetEmail(auth, currentUser.email);
+                alert("Password reset email sent to " + currentUser.email);
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        };
+
+        window.deleteAccount = async function() {
+            if(confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                try {
+                    await deleteUser(auth.currentUser);
+                    alert("Account deleted.");
+                } catch (error) {
+                    alert("Error deleting account: " + error.message + "\n(Note: Firebase requires recent sign-in to delete accounts).");
+                }
+            }
+        };
+
+        window.signOut = async function() {
+            try {
+                await fbSignOut(auth);
+            } catch (error) {
+                console.error("Sign out error:", error);
+            }
         };
     </script>
 </body>
